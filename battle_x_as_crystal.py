@@ -10,10 +10,10 @@ from utils.files import *
 from utils.movies import build_movie, MovieContext
 
 
-def load_trainer_info(trainer_id: int, trainer_index: int, in_save: bytearray, working_save: str) -> bytearray:
+def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, working_save: str) -> bytearray:
 	save = in_save.copy()
-	save[memory.OTHER_TRAINER_CLASS - memory.GLOBAL_OFFSET] = trainer_id
-	save[memory.TRAINER_ID - memory.GLOBAL_OFFSET] = trainer_index
+	set_value(save, [trainer_class], memory.wOtherTrainerClass)
+	set_value(save, [trainer_id], memory.wOtherTrainerID)
 	write_file(working_save, save)
 
 	call_bgb(in_save=working_save,
@@ -27,29 +27,23 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
                        enemy_index: int) -> bytearray:
 	battle_save = base_save.copy()
 
-	copy_values(player_trainer_info, memory.ENEMY_PARTY_START, battle_save, memory.PLAYER_PARTY_START,
-	            memory.PLAYER_PARTY_END - memory.PLAYER_PARTY_START)
+	copy_values(player_trainer_info, memory.wOTParty, battle_save, memory.wPlayerParty)
 
-	enemy_party_size = get_value(player_trainer_info, memory.ENEMY_PARTY_COUNT, 1)[0]
-	enemy_mons = get_value(player_trainer_info, memory.ENEMY_PARTY_STRUCTS_START,
-	                       memory.PARTY_STRUCT_SIZE * enemy_party_size)
+	enemy_party_size = get_value(player_trainer_info, memory.wOTPartyCount)[0]
 
 	for i in range(enemy_party_size):
-		pokemon_index = enemy_mons[memory.PARTY_STRUCT_SIZE * i] - 1
+		pokemon = get_value(player_trainer_info, memory.enemyParty[i])
+		pokemon_index = pokemon[0] - 1
 		pokemon_name = name_to_bytes(pokemon_names[str(pokemon_index)])
-		set_value(battle_save, memory.PLAYER_PARTY_NICKS + memory.POKEMON_NAME_LENGTH * i, pokemon_name,
-		          memory.POKEMON_NAME_LENGTH)
-		copy_values(player_trainer_info, memory.STRING_BUFFER_1, battle_save,
-		            memory.PLAYER_PARTY_OTS + memory.POKEMON_NAME_LENGTH * i,
-		            memory.POKEMON_NAME_LENGTH)
+		set_value(battle_save, pokemon_name, memory.playerPartyNicks[i])
+		copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.playerPartyOTs[i])
 
-	copy_values(player_trainer_info, memory.STRING_BUFFER_1, battle_save, memory.PLAYER_TRAINER_NAME,
-	            memory.PLAYER_NAME_LENGTH)
-	set_value(battle_save, memory.PLAYER_TRAINER_NAME + memory.PLAYER_NAME_LENGTH - 1, [memory.NAME_TERMINATOR], 1)
-	set_value(battle_save, memory.PLAYER_GENDER, [0x1], 1)
+	copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.wPlayerName)
+	set_value(battle_save, [memory.NAME_TERMINATOR], memory.playerNameEnd)
+	set_value(battle_save, [0x1], memory.wPlayerGender)  # TODO: Set gender properly
 
-	set_value(battle_save, memory.OTHER_TRAINER_CLASS, [enemy_class], 1)
-	set_value(battle_save, memory.TRAINER_ID, [enemy_index], 1)
+	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
+	set_value(battle_save, [enemy_index], memory.wOtherTrainerID)
 
 	return battle_save
 
@@ -58,6 +52,7 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 	ai_save = load_save(base_save)
 	swap_pairings(battle_save, ai_save)
 
+	# TODO: wTrainerClass or whatever it is
 	# TODO: Randomize rdiv w/ seeded value
 	# TODO: Item counts
 	# TODO: we may need to update more values here. Check the disassembly.
@@ -87,23 +82,17 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 
 def swap_pairings(source_save, target_save):
 	# Copy data from battle save to ai save, swapping the player and enemy data
-	# TODO: wTrainerClass or whatever it is
-	for pairing in memory.player_enemy_pairs:
-		player_offset = pairing[0][0]
-		enemy_offset = pairing[1][0]
-		assert pairing[0][1] == pairing[1][1]
-		size = pairing[0][1]
-		copy_values(source_save, player_offset, target_save, enemy_offset, size)
-		copy_values(source_save, enemy_offset, target_save, player_offset, size)
 
-	copy_values(source_save, memory.PLAYER_PARTY_START, target_save, memory.ENEMY_PARTY_START,
-	            memory.ENEMY_PARTY_END - memory.ENEMY_PARTY_START)
-	copy_values(source_save, memory.ENEMY_PARTY_START, target_save, memory.PLAYER_PARTY_START,
-	            memory.PLAYER_PARTY_END - memory.PLAYER_PARTY_START)
+	for pairing in memory.player_enemy_pairs:
+		player_address = pairing[0]
+		enemy_address = pairing[1]
+
+		copy_values(source_save, player_address, target_save, enemy_address)
+		copy_values(source_save, enemy_address, target_save, player_address)
 
 
 def initial_testing():
-	#Set up working directory
+	# Set up working directory
 	run_identifier = random.randint(1, 10000000)
 	working_dir = os.path.abspath(f"./working/{run_identifier}")
 	output_dir = os.path.abspath(f"./output/{run_identifier}")
@@ -115,8 +104,8 @@ def initial_testing():
 	                             movie_working_dir=movie_working_dir,
 	                             movie_output_dir=output_dir)
 
-	for dir in [working_dir, output_dir, save_working_dir, demo_working_dir, movie_working_dir]:
-		os.makedirs(dir, exist_ok=True)
+	for directory in [working_dir, output_dir, save_working_dir, demo_working_dir, movie_working_dir]:
+		os.makedirs(directory, exist_ok=True)
 
 	out_save_path = f"{save_working_dir}/{files.OUT_SAVE}"
 	ai_input_save_path = f"{save_working_dir}/{files.AI_INPUT_SAVE}"
@@ -192,8 +181,8 @@ def initial_testing():
 			                          working_save=ai_input_save_path,
 			                          out_save=ai_output_save_path)
 
-			selected_pokemon_index = get_value(ai_output, memory.wCurPartyMon[0], memory.wCurPartyMon[1])[0]
-			current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor[0], memory.wPartyMenuCursor[1])[0]
+			selected_pokemon_index = get_value(ai_output, memory.wCurPartyMon)[0]
+			current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
 
 			# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
 			current_pokemon_index = max(current_pokemon_index, 1) - 1
@@ -213,10 +202,8 @@ def initial_testing():
 
 			if ai_pc == memory.breakpoints["AI_Switch"]:
 				print("The AI wants to switcharino")
-				target_pokemon = get_value(ai_output, memory.wEnemySwitchMonIndex[0], memory.wEnemySwitchMonIndex[1])[
-					                 0] - 1
-				current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor[0], memory.wPartyMenuCursor[1])[
-					0]
+				target_pokemon = get_value(ai_output, memory.wEnemySwitchMonIndex)[0] - 1
+				current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
 
 				# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
 				current_pokemon_index = max(current_pokemon_index, 1) - 1
@@ -226,9 +213,9 @@ def initial_testing():
 				button_sequence = select_switch() + choose_pokemon(current_pokemon_index, target_pokemon)
 
 			else:
-				selected_move_index = get_value(ai_output, memory.wCurEnemyMoveNum[0], memory.wCurEnemyMoveNum[1])[0]
+				selected_move_index = get_value(ai_output, memory.wCurEnemyMoveNum)[0]
 				print("The selected move was", selected_move_index)
-				current_move_index = get_value(battle_save, memory.wCurMoveNum[0], memory.wCurMoveNum[1])[0]
+				current_move_index = get_value(battle_save, memory.wCurMoveNum)[0]
 
 				button_sequence = select_move(current_move_index, selected_move_index)
 

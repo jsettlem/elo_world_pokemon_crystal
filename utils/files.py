@@ -3,23 +3,32 @@ from typing import Iterable
 
 from battle_x_as_crystal import reverse_characters
 from constants import memory
+from constants.memory import MemoryAddress
 
 
-def name_to_bytes(name: str, length: int = memory.POKEMON_NAME_LENGTH) -> Iterable[int]:
+def name_to_bytes(name: str, length: int = memory.NAME_LENGTH) -> Iterable[int]:
 	return (reverse_characters[name[i]] if i < len(name) else memory.NAME_TERMINATOR for i in range(length))
 
 
-def get_value(source: bytearray, offset: int, length: int) -> bytearray:
+def get_value(source: bytearray, address: "MemoryAddress") -> bytearray:
+	offset = address.offset
+	length = address.size
 	return source[offset - memory.GLOBAL_OFFSET:offset + length - memory.GLOBAL_OFFSET]
 
 
-def set_value(target: bytearray, offset: int, source: Iterable[int], length: int) -> None:
+def set_value(target: bytearray, source: Iterable[int], address: "MemoryAddress") -> None:
+	offset = address.offset
+	length = address.size
 	target[offset - memory.GLOBAL_OFFSET:offset + length - memory.GLOBAL_OFFSET] = source
 
 
-def copy_values(source: bytearray, source_offset: int, target: bytearray, target_offset: int, length: int) -> None:
-	target[target_offset - memory.GLOBAL_OFFSET:target_offset + length - memory.GLOBAL_OFFSET] = source[
-	                                                                                             source_offset - memory.GLOBAL_OFFSET:source_offset + length - memory.GLOBAL_OFFSET]
+def copy_values(source: bytearray, source_address: "MemoryAddress", target: bytearray,  target_address: "MemoryAddress") -> None:
+	assert source_address.size == target_address.size
+	source_offset = source_address.offset
+	target_offset = target_address.offset
+	length = source_address.size
+	target[target_offset - memory.GLOBAL_OFFSET:target_offset + length - memory.GLOBAL_OFFSET] = \
+		source[source_offset - memory.GLOBAL_OFFSET:source_offset + length - memory.GLOBAL_OFFSET]
 
 
 def write_file(file: str, save: bytearray) -> None:
