@@ -62,7 +62,6 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 	# TODO: Item counts
 	# TODO: we may need to update more values here. Check the disassembly.
 
-
 	# These allow us to make the game think our Pokemon is always on the last turn of Perish Song
 	# set_value(ai_save, wEnemySubStatus1[0], [0x10], 1)
 	# set_value(ai_save, wEnemyPerishCount[0], [0x1], 1)
@@ -104,6 +103,7 @@ def swap_pairings(source_save, target_save):
 
 
 def initial_testing():
+	#Set up working directory
 	run_identifier = random.randint(1, 10000000)
 	working_dir = os.path.abspath(f"./working/{run_identifier}")
 	output_dir = os.path.abspath(f"./output/{run_identifier}")
@@ -128,7 +128,7 @@ def initial_testing():
 	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
 
-	# Set up player and enemy party data
+	# Randomly choose a player and enemy trainer
 	seed = random.randint(0, 1000000000)
 	print("seed", seed)
 	random.seed(seed)
@@ -146,19 +146,20 @@ def initial_testing():
 
 	print(f"You are {get_trainer_identifier(player_trainer)}. Your opponent is {get_trainer_identifier(enemy_trainer)}")
 
+	# Load the data for the player trainer
 	base_save = load_save(files.BASE_SAVE)
 
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
+	# Set up the initial battle state
 	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index)
 
 	write_file(battle_save_path, battle_save)
-
 	write_file(out_demo_path, generate_demo([]))
-	total_clocks = get_total_clocks(battle_save)
 
 	while True:
-		# Play till the player gains control
+		# Play until we reach a menu or win/lose
+		total_clocks = get_total_clocks(battle_save)
 		breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
 		call_bgb(in_save=battle_save_path, out_save=battle_save_path, breakpoint_list=[
 			f'BattleMenu/{breakpoint_condition}',
@@ -171,6 +172,8 @@ def initial_testing():
 
 		pc = get_program_counter(battle_save)
 		print(f'Program counter: {pc:x}')
+
+		# Which breakpoint did we hit?
 		if pc == memory.breakpoints["WinTrainerBattle"]:
 			# Player won!
 
@@ -230,8 +233,6 @@ def initial_testing():
 				button_sequence = select_move(current_move_index, selected_move_index)
 
 		write_file(out_demo_path, button_sequence)
-
-		total_clocks = get_total_clocks(battle_save)
 
 	build_movie(movie_context)
 

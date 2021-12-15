@@ -7,7 +7,7 @@ from constants import buttons as button, buttons as buttons
 
 
 def make_button_sequence(buttons: Iterable[int]) -> Iterable[int]:
-	zero = itertools.repeat(0)
+	zero = itertools.repeat(button.NOTHING_BUTTON)
 	buffer_size = 12
 	return [
 		half_press
@@ -36,7 +36,7 @@ def select_move(current_move: int, target_move: int) -> bytearray:
 		button.UP_BUTTON,
 		button.LEFT_BUTTON,
 		button.A_BUTTON,
-		0, 0,
+		*buffer(2),
 		*select_menu_item(current_move, target_move),
 		button.A_BUTTON
 	])
@@ -44,12 +44,16 @@ def select_move(current_move: int, target_move: int) -> bytearray:
 
 def choose_pokemon(current: int, target: int) -> bytearray:
 	return generate_demo([
-		0, 0, 0, 0, 0,
+		*buffer(3),
 		*select_menu_item(current, target),
 		button.A_BUTTON,
-		0, 0, 0, 0, 0,
+		*buffer(3),
 		button.A_BUTTON
 	])
+
+
+def buffer(length):
+	return [button.NOTHING_BUTTON] * length
 
 
 def select_switch(buffer_size=1) -> bytearray:
