@@ -1,0 +1,162 @@
+What determines trainer?
+
+wOtherTrainerClass = $d22f
+wTrainerClass = $d233
+wOtherTrainerID = $d231
+
+savestae: 0x1730
+wram: 0xd220
+
+=================================
+
+enemy party data:
+
+; enemy party
+wOTPartyData:: $d26b
+wOTPlayerName:: ds NAME_LENGTH
+wOTPlayerID:: dw
+	ds 8
+
+wOTPartyCount::   db $d280
+wOTPartySpecies:: ds PARTY_LENGTH
+wOTPartyEnd::     db ; older code doesn't check PartyCount
+ENDU
+
+UNION
+; ot party mons
+wOTPartyMons::
+; wOTPartyMon1 - wOTPartyMon6
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}:: party_struct wOTPartyMon{d:n}
+endr
+
+wOTPartyMonOTs::
+; wOTPartyMon1OT - wOTPartyMon6OT
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}OT:: ds NAME_LENGTH
+endr
+
+wOTPartyMonNicknames::
+; wOTPartyMon1Nickname - wOTPartyMon6Nickname
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}Nickname:: ds MON_NAME_LENGTH
+endr
+wOTPartyDataEnd:: $d42c
+
+============================
+
+player party data:
+
+wPokemonData::
+
+wPartyCount::   db  $dcd7
+wPartySpecies:: ds PARTY_LENGTH
+wPartyEnd::     db ; older code doesn't check wPartyCount
+
+wPartyMons::
+; wPartyMon1 - wPartyMon6
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}:: party_struct wPartyMon{d:n}
+endr
+
+wPartyMonOTs::
+; wPartyMon1OT - wPartyMon6OT
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}OT:: ds NAME_LENGTH
+endr
+
+wPartyMonNicknames::
+; wPartyMon1Nickname - wPartyMon6Nickname
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}Nickname:: ds MON_NAME_LENGTH
+endr
+wPartyMonNicknamesEnd:: $de83
+
+==============================
+
+addresses the AI cares about:
+
+
+wBattleMon                  wEnemyMon
+
+wEnemyMoveStruct            wPlayerMoveStruct
+
+
+ wPlayerSubStatus1,          wEnemySubStatus1
+ wPlayerSubStatus2,          wEnemySubStatus2
+ wPlayerSubStatus3,          wEnemySubStatus3
+ wPlayerSubStatus4,          wEnemySubStatus4
+ wPlayerSubStatus5,          wEnemySubStatus5
+ wBattleMonStatus,           wEnemyMonStatus
+ wPlayerMoveStructAnimation, wEnemyMoveStructAnimation
+ wPlayerMoveStructEffect,    wEnemyMoveStructEffect
+ wPlayerMoveStructPower,     wEnemyMoveStructPower
+ wPlayerMoveStructType,      wEnemyMoveStructType
+ wCurPlayerMove,             wCurEnemyMove
+ wLastPlayerCounterMove,     wLastEnemyCounterMove
+ wLastPlayerMove,            wLastEnemyMove
+
+wPlayerRolloutCount          wEnemyRolloutCount
+wPlayerConfuseCount          wEnemyConfuseCount
+wPlayerToxicCount            wEnemyToxicCount
+wPlayerDisableCount          wEnemyDisableCount
+wPlayerEncoreCount           wEnemyEncoreCount
+wPlayerPerishCount           wEnemyPerishCount
+wPlayerFuryCutterCount       wEnemyFuryCutterCount
+wPlayerProtectCount          wEnemyProtectCount
+
+wPlayerScreens               wEnemyScreens
+wPlayerDamageTaken           wEnemyDamageTaken
+wPlayerStats                 wEnemyStats
+wPlayerStatLevels            wEnemyStatLevels
+wPlayerTurnsTaken            wEnemyTurnsTaken
+wPlayerSubstituteHP          wEnemySubstituteHP
+wDisabledMove                wEnemyDisabledMove
+
+
+wEnemyItemState
+wCurEnemyMoveNum
+wEnemyMinimized
+wAlreadyFailed
+
+wEnemyTrainerItem1
+wEnemyTrainerItem2
+wTrainerClass
+
+
+==============================
+Enemy AI output:
+calls AIChooseMove
+returns in wCurEnemyMoveNum
+calls battle menu
+calls Battle_PlayerFirst or Battle_EnemyFirst
+calls AI_SwitchOrTryItem
+if it wants to switch, calls AI_TrySwitch
+if able to switch, call AI_Switch (dunno what memory address it uses)
+If don't want to switch, call AI_TryItem
+If want to use item, call one of the following:
+    EnemyUsedFullHeal
+    EnemyUsedMaxPotion
+    EnemyUsedFullRestore
+    EnemyUsedPotion
+    EnemyUsedSuperPotion
+    EnemyUsedHyperPotion
+    EnemyUsedXAccuracy
+    EnemyUsedGuardSpec
+    EnemyUsedDireHit
+    EnemyUsedXAttack
+    EnemyUsedXDefend
+    EnemyUsedXSpeed
+    EnemyUsedXSpecial
+
+Otherwise, end up at PlayerTurn_EndOpponentProtectEndureDestinyBond or EnemyTurn_EndOpponentProtectEndureDestinyBond
+
+==============================
+Things to watch out for:
+- Ditto
+- Baton Pass
+- Item counts
+- Enemy status move accuracy
+-
+
+
