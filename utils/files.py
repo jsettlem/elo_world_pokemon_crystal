@@ -48,3 +48,9 @@ def get_total_clocks(source: bytearray) -> int:
 
 def get_program_counter(source: bytearray) -> int:
 	return (source[memory.PC_OFFSET + 1] << 8) | source[memory.PC_OFFSET]
+
+
+def randomize_rdiv(source: bytearray, rng):
+	random_clock = [rng.randint(0, 255) for _ in range(2)]
+	source[memory.DIVISOR_OFFSET:memory.DIVISOR_OFFSET + 2] = random_clock
+

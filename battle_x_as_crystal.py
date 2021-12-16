@@ -24,7 +24,7 @@ def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, w
 
 
 def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, enemy_class: int,
-                       enemy_index: int) -> bytearray:
+                       enemy_index: int, rng: random.Random) -> bytearray:
 	battle_save = base_save.copy()
 
 	copy_values(player_trainer_info, memory.wOTParty, battle_save, memory.wPlayerParty)
@@ -45,15 +45,23 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
 	set_value(battle_save, [enemy_index], memory.wOtherTrainerID)
 
+	randomize_rdiv(battle_save, rng)
+
+	# randomize textbox frame
+	set_value(battle_save, [rng.randint(0, 8)], memory.wTextboxFrame)
+
 	return battle_save
 
 
-def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str):
+def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int], rng: random.Random):
 	ai_save = load_save(base_save)
 	swap_pairings(battle_save, ai_save)
 
-	# TODO: wTrainerClass or whatever it is
-	# TODO: Randomize rdiv w/ seeded value
+	set_value(ai_save, [trainer[0]], memory.wOtherTrainerClass)
+	set_value(ai_save, [trainer[1]], memory.wOtherTrainerID)
+
+	randomize_rdiv(ai_save, rng)
+
 	# TODO: Item counts
 	# TODO: we may need to update more values here. Check the disassembly.
 
@@ -73,7 +81,9 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 		'EnemyUsedFullHeal', 'EnemyUsedMaxPotion', 'EnemyUsedFullRestore', 'EnemyUsedPotion', 'EnemyUsedSuperPotion',
 		'EnemyUsedHyperPotion', 'EnemyUsedXAccuracy', 'EnemyUsedGuardSpec', 'EnemyUsedDireHit', 'EnemyUsedXAttack',
 		'EnemyUsedXDefend', 'EnemyUsedXSpeed', 'EnemyUsedXSpecial',
-	], demo=files.AI_DEMO)
+	], demo=files.AI_DEMO,
+	         # hf=False, timeout=1000
+	         )
 
 	# Parse AI actions
 	ai_output = load_save(out_save)
@@ -92,10 +102,14 @@ def swap_pairings(source_save, target_save):
 
 
 def initial_testing():
+	seed = random.randint(0, 1000000000)
+	print("seed", seed)
+	rng = random.Random(seed)
+
 	# Set up working directory
 	run_identifier = random.randint(1, 10000000)
-	working_dir = os.path.abspath(f"./working/{run_identifier}")
-	output_dir = os.path.abspath(f"./output/{run_identifier}")
+	working_dir = os.path.abspath(f"W:/elo_world_scratch/crystal/{run_identifier}")
+	output_dir = os.path.abspath(f"W:/elo_world_output/crystal/{run_identifier}")
 	movie_working_dir = f"{working_dir}/movie"
 	save_working_dir = f"{working_dir}/saves"
 	demo_working_dir = f"{working_dir}/demo"
@@ -118,10 +132,8 @@ def initial_testing():
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
 
 	# Randomly choose a player and enemy trainer
-	seed = random.randint(0, 1000000000)
-	print("seed", seed)
-	random.seed(seed)
-	player_trainer, enemy_trainer = random.choice(raw_trainer_data), random.choice(raw_trainer_data)
+
+	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
 
 	player_class = player_trainer['class']
 	player_index = player_trainer['instance']
@@ -141,7 +153,7 @@ def initial_testing():
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
 	# Set up the initial battle state
-	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index)
+	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, rng)
 
 	write_file(battle_save_path, battle_save)
 	write_file(out_demo_path, generate_demo([]))
@@ -179,7 +191,9 @@ def initial_testing():
 			ai_output = get_ai_action(battle_save=battle_save,
 			                          base_save=files.BASE_SWITCH_SAVE,
 			                          working_save=ai_input_save_path,
-			                          out_save=ai_output_save_path)
+			                          out_save=ai_output_save_path,
+			                          trainer=(player_class, player_index),
+			                          rng=rng)
 
 			selected_pokemon_index = get_value(ai_output, memory.wCurPartyMon)[0]
 			current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
@@ -196,7 +210,9 @@ def initial_testing():
 			ai_output = get_ai_action(battle_save=battle_save,
 			                          base_save=files.BASE_AI_SAVE,
 			                          working_save=ai_input_save_path,
-			                          out_save=ai_output_save_path)
+			                          out_save=ai_output_save_path,
+			                          trainer=(player_class, player_index),
+			                          rng=rng)
 
 			ai_pc = get_program_counter(ai_output)
 

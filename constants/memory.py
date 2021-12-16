@@ -3,6 +3,7 @@ from dataclasses import dataclass
 GLOBAL_OFFSET = 0xBAF0
 TOTAL_CLOCKS_OFFSET = 0x21F
 PC_OFFSET = 0xC7
+DIVISOR_OFFSET = 0x20E
 
 NAME_LENGTH = 11
 PLAYER_NAME_LENGTH = 8
@@ -27,6 +28,7 @@ wPlayerName = MemoryAddress(0xd47d, PLAYER_NAME_LENGTH)
 playerNameEnd = MemoryAddress(0xd48d + PLAYER_NAME_LENGTH - 1, 1)
 
 wPlayerGender = MemoryAddress(0xd472, 1)
+wTextboxFrame = MemoryAddress(0xcfce, 1)
 
 wOTParty = MemoryAddress(0xd280, 0x1ac)
 wOTPartyCount = MemoryAddress(0xd280, 1)
