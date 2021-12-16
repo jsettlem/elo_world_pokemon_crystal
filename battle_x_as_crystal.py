@@ -24,7 +24,7 @@ def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, w
 
 
 def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, enemy_class: int,
-                       enemy_index: int, rng: random.Random) -> bytearray:
+                       enemy_index: int, enemy_gender: str, rng: random.Random) -> bytearray:
 	battle_save = base_save.copy()
 
 	copy_values(player_trainer_info, memory.wOTParty, battle_save, memory.wPlayerParty)
@@ -40,7 +40,9 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 
 	copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.wPlayerName)
 	set_value(battle_save, [memory.NAME_TERMINATOR], memory.playerNameEnd)
-	set_value(battle_save, [0x1], memory.wPlayerGender)  # TODO: Set gender properly
+
+	if enemy_gender == "FEMALE" or (enemy_gender == "ENBY" and rng.random() > 0.5):
+		set_value(battle_save, [0x1], memory.wPlayerGender)
 
 	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
 	set_value(battle_save, [enemy_index], memory.wOtherTrainerID)
@@ -153,7 +155,7 @@ def initial_testing():
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
 	# Set up the initial battle state
-	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, rng)
+	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, enemy_trainer["gender"], rng)
 
 	write_file(battle_save_path, battle_save)
 	write_file(out_demo_path, generate_demo([]))

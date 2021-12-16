@@ -19,18 +19,19 @@ def build_movie(movie_context: "MovieContext"):
 	create_concat_file(video_list_txt, [f for f in files if f.endswith(".avi")])
 	create_concat_file(audio_list_txt, [f for f in files if f.endswith(".wav")])
 
-	output_movie = f"{movie_context.movie_output_dir}/movies/{movie_context.movie_name}.mkv"
+	output_movie = f"{movie_context.movie_output_dir}/movies/{movie_context.movie_name}.mov"
 	os.makedirs(os.path.dirname(output_movie), exist_ok=True)
 
 	subprocess.call(["ffmpeg",
 	                 "-i", video_list_txt,
 	                 "-i", audio_list_txt,
-	                 "-c:v", "libx265",
-	                 "-preset", "slow",
-	                 "-crf", "17",
-	                 "-c:a", "libopus",
-	                 "-b:a", "32k",
-	                 "-threads", "1",
+	                 "-vf", "scale=1600x1440",
+	                 "-sws_flags", "neighbor",
+	                 "-c:v", "libx264",
+	                 "-crf", "23",
+	                 "-c:a", "aac",
+	                 "-b:a", "128k",
+	                 # "-threads", "1",
 	                 output_movie])
 
 
