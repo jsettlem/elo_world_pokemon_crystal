@@ -32,7 +32,7 @@ class_attributes = [
 
 ]
 
-with open("class_attributes.txt", 'r') as f:
+with open("./data_files/class_attributes.txt", 'r') as f:
 	clines = f.readlines()
 
 i = 0
@@ -62,7 +62,7 @@ while i < len(clines):
 	i += 1
 	class_attributes.append(class_attribute)
 
-with open("trainer_data.txt", 'r') as f:
+with open("./data_files/trainer_data.txt", 'r') as f:
 	lines = f.readlines()
 
 current_class_index = -1
@@ -106,11 +106,13 @@ for line in lines:
 			current_instance_index += 1
 			parsed_line = line.strip()[2:].partition(";")[0].split(",")
 			current_trainer_type = parsed_line[1].strip().removeprefix("TRAINERTYPE_")
+			current_trainer_name = parsed_line[0].strip().strip("\"").rstrip("@")
+			current_trainer_title = class_names[current_class_index]
 			rematch_count = 1 + len([t for t in trainers if
-			                         t["name"] == current_trainer["name"] and t["title"] == current_trainer["title"]])
+			                         t["name"] == current_trainer_name and t["title"] == current_trainer_title])
 			current_trainer = {
-				"title": class_names[current_class_index],
-				"name": parsed_line[0].strip().strip("\"").rstrip("@"),
+				"title": current_trainer_title,
+				"name": current_trainer_name,
 				"pokemon": [],
 				"class": current_class_index + 1,
 				"instance": current_instance_index,
