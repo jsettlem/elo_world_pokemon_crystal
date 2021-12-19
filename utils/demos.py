@@ -32,6 +32,7 @@ def select_menu_item(current: int, target: int) -> Iterable[int]:
 
 def select_move(current_move: int, target_move: int) -> bytearray:
 	return generate_demo([
+		*buffer(3),
 		button.B_BUTTON,
 		button.UP_BUTTON,
 		button.LEFT_BUTTON,
@@ -48,6 +49,25 @@ def choose_pokemon(current: int, target: int) -> bytearray:
 		*select_menu_item(current, target),
 		button.A_BUTTON,
 		*buffer(3),
+		button.A_BUTTON
+	])
+
+
+def select_item(current, target) -> bytearray:
+	return generate_demo([
+		button.B_BUTTON,
+		button.B_BUTTON,
+		button.B_BUTTON,
+		button.DOWN_BUTTON,
+		button.LEFT_BUTTON,
+		button.A_BUTTON,
+		*buffer(5),
+		button.A_BUTTON,
+		*buffer(2),
+		button.A_BUTTON,
+		*buffer(5),
+		# we don't need to select a Pokémon if it's an x-item, but the extra button inputs don't hurt anything
+		*select_menu_item(current, target),
 		button.A_BUTTON
 	])
 

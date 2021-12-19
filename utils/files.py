@@ -54,3 +54,9 @@ def randomize_rdiv(source: bytearray, rng):
 	random_clock = [rng.randint(0, 255) for _ in range(2)]
 	source[memory.DIVISOR_OFFSET:memory.DIVISOR_OFFSET + 2] = random_clock
 
+
+def get_current_pokemon_index(battle_save):
+	current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
+	# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
+	current_pokemon_index = max(current_pokemon_index, 1) - 1
+	return current_pokemon_index

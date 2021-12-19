@@ -26,3 +26,5 @@ def call_bgb(in_save: str,
 		                   f"RecordPrefix={movie_context.movie_working_dir}/movie{movie_context.movie_index:05}",
 	                   ] if movie_context is not None else []),
 	                 ], timeout=timeout)
+	if movie_context is not None:
+		movie_context.movie_index += 1

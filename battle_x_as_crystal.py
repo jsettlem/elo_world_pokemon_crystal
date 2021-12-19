@@ -3,6 +3,7 @@ import random
 import shutil
 
 import constants.file_paths as files
+from constants.memory import wEnemyTrainerItems
 from utils.bgb import call_bgb
 from utils.data import *
 from utils.demos import *
@@ -45,6 +46,7 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 		set_value(battle_save, [0x1], memory.wPlayerGender)
 
 	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
+	set_value(battle_save, [enemy_class], memory.wTrainerClass)
 	set_value(battle_save, [enemy_index], memory.wOtherTrainerID)
 
 	randomize_rdiv(battle_save, rng)
@@ -52,19 +54,26 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 	# randomize textbox frame
 	set_value(battle_save, [rng.randint(0, 8)], memory.wTextboxFrame)
 
+	set_value(battle_save, [0x1], memory.wNumItems)
+	item_id = memory.itemXAttack
+	set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
+
 	return battle_save
 
 
-def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int], rng: random.Random):
+def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int], rng: random.Random, current_player_items: bytearray = None) -> bytearray:
 	ai_save = load_save(base_save)
 	swap_pairings(battle_save, ai_save)
 
 	set_value(ai_save, [trainer[0]], memory.wOtherTrainerClass)
+	set_value(ai_save, [trainer[0]], memory.wTrainerClass)
 	set_value(ai_save, [trainer[1]], memory.wOtherTrainerID)
 
 	randomize_rdiv(ai_save, rng)
 
-	# TODO: Item counts
+	if current_player_items is not None:
+		set_value(ai_save, current_player_items, memory.wEnemyTrainerItems)
+
 	# TODO: we may need to update more values here. Check the disassembly.
 
 	# These allow us to make the game think our Pokemon is always on the last turn of Perish Song
@@ -84,7 +93,7 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 		'EnemyUsedHyperPotion', 'EnemyUsedXAccuracy', 'EnemyUsedGuardSpec', 'EnemyUsedDireHit', 'EnemyUsedXAttack',
 		'EnemyUsedXDefend', 'EnemyUsedXSpeed', 'EnemyUsedXSpecial',
 	], demo=files.AI_DEMO,
-	         # hf=False, timeout=1000
+	         # hf=False, timeout=10000
 	         )
 
 	# Parse AI actions
@@ -105,7 +114,9 @@ def swap_pairings(source_save, target_save):
 
 def initial_testing():
 	seed = random.randint(0, 1000000000)
+	# seed = 297322721
 	print("seed", seed)
+
 	rng = random.Random(seed)
 
 	# Set up working directory
@@ -137,15 +148,15 @@ def initial_testing():
 
 	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
 
-	player_class = player_trainer['class']
-	player_index = player_trainer['instance']
-	enemy_class = enemy_trainer['class']
-	enemy_index = enemy_trainer['instance']
-
-	# player_class = 63
-	# player_index = 1
-	# enemy_class = 16
-	# enemy_index = 1
+	# player_class = player_trainer['class']
+	# player_index = player_trainer['instance']
+	# enemy_class = enemy_trainer['class']
+	# enemy_index = enemy_trainer['instance']
+	#
+	player_class = 26
+	player_index = 1
+	enemy_class = 26
+	enemy_index = 1
 
 	print(f"You are {get_trainer_identifier(player_trainer)}. Your opponent is {get_trainer_identifier(enemy_trainer)}")
 
@@ -156,11 +167,13 @@ def initial_testing():
 
 	# Set up the initial battle state
 	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, enemy_trainer["gender"], rng)
+	current_player_items = get_value(player_trainer_info, wEnemyTrainerItems)
 
 	write_file(battle_save_path, battle_save)
 	write_file(out_demo_path, generate_demo([]))
 
 	while True:
+		print(f"{current_player_items=}")
 		# Play until we reach a menu or win/lose
 		total_clocks = get_total_clocks(battle_save)
 		breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
@@ -195,13 +208,11 @@ def initial_testing():
 			                          working_save=ai_input_save_path,
 			                          out_save=ai_output_save_path,
 			                          trainer=(player_class, player_index),
+
 			                          rng=rng)
 
 			selected_pokemon_index = get_value(ai_output, memory.wCurPartyMon)[0]
-			current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
-
-			# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
-			current_pokemon_index = max(current_pokemon_index, 1) - 1
+			current_pokemon_index = get_current_pokemon_index(battle_save)
 			print("The selected pokemon was", selected_pokemon_index, "and the current pokemon was",
 			      current_pokemon_index)
 
@@ -214,17 +225,31 @@ def initial_testing():
 			                          working_save=ai_input_save_path,
 			                          out_save=ai_output_save_path,
 			                          trainer=(player_class, player_index),
+			                          current_player_items=current_player_items,
 			                          rng=rng)
 
 			ai_pc = get_program_counter(ai_output)
+			print(f'AI program counter: {ai_pc:x}')
+			if ai_pc in memory.items.keys():
+				print("The AI wants to use an item")
 
-			if ai_pc == memory.breakpoints["AI_Switch"]:
+				set_value(battle_save, [0x1], memory.wNumItems)
+				item_id = memory.items[ai_pc]
+				set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
+
+				selected_pokemon_index = get_value(battle_save, memory.wCurPartyMon)[0]
+				current_pokemon_index = get_current_pokemon_index(battle_save)
+
+				button_sequence = select_item(current_pokemon_index, selected_pokemon_index)
+
+				write_file(battle_save_path, battle_save)
+
+				current_player_items[current_player_items.index(item_id)] = 0x0
+
+			elif ai_pc == memory.breakpoints["AI_Switch"]:
 				print("The AI wants to switcharino")
 				target_pokemon = get_value(ai_output, memory.wEnemySwitchMonIndex)[0] - 1
-				current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
-
-				# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
-				current_pokemon_index = max(current_pokemon_index, 1) - 1
+				current_pokemon_index = get_current_pokemon_index(battle_save)
 				print("The selected pokemon was", target_pokemon, "and the current pokemon was",
 				      current_pokemon_index)
 

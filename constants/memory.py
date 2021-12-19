@@ -20,6 +20,7 @@ class MemoryAddress:
 
 
 wOtherTrainerClass = MemoryAddress(0xd22f, 1)
+wTrainerClass = MemoryAddress(0xd233, 1)
 wOtherTrainerID = MemoryAddress(0xd231, 1)
 
 wStringBuffer1 = MemoryAddress(0xd073, PLAYER_NAME_LENGTH)
@@ -121,6 +122,50 @@ breakpoints = {
 	"WinTrainerBattle": 0x4fa4
 }
 
+usedFullHeal = 0x43a3
+usedMaxPotion = 0x43ae
+usedFullRestore = 0x43b5
+usedPotion = 0x43e8
+usedSuperPotion = 0x43ee
+usedHyperPotion = 0x43f4
+usedXAccuracy = 0x44f7
+usedGuardSpec = 0x4504
+usedDireHit = 0x4511
+usedXAttack = 0x4541
+usedXDefend = 0x4547
+usedXSpeed = 0x454d
+usedXSpecial = 0x4553
+
+itemFullHeal = 0x26
+itemMaxPotion = 0x0f
+itemFullRestore = 0x0e
+itemPotion = 0x12
+itemSuperPotion = 0x11
+itemHyperPotion = 0x10
+itemXAccuracy = 0x21
+itemGuardSpec = 0x29
+itemDireHit = 0x2c
+itemXAttack = 0x31
+itemXDefend = 0x33
+itemXSpeed = 0x34
+itemXSpecial = 0x35
+
+items = {
+	usedFullHeal: itemFullHeal,
+	usedMaxPotion: itemMaxPotion,
+	usedFullRestore: itemFullRestore,
+	usedPotion: itemPotion,
+	usedSuperPotion: itemSuperPotion,
+	usedHyperPotion: itemHyperPotion,
+	usedXAccuracy: itemXAccuracy,
+	usedGuardSpec: itemGuardSpec,
+	usedDireHit: itemDireHit,
+	usedXAttack: itemXAttack,
+	usedXDefend: itemXDefend,
+	usedXSpeed: itemXSpeed,
+	usedXSpecial: itemXSpecial
+}
+
 player_enemy_pairs = (
 	(wBattleMonNickname, wEnemyMonNickname),
 	(wBattleMon, wEnemyMon),
@@ -151,3 +196,7 @@ player_enemy_pairs = (
 	(wCurPartyMon, wCurOTMon),  # TODO: check that wcurpartymon is correct
 	(wPlayerParty, wOTParty)
 )
+
+wNumItems = MemoryAddress(0xd892, 1)
+wItems = MemoryAddress(0xd893, 3)
+wEnemyTrainerItems = MemoryAddress(0xc650, 2)
