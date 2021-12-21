@@ -74,6 +74,8 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 	if current_player_items is not None:
 		set_value(ai_save, current_player_items, memory.wEnemyTrainerItems)
 
+	set_value(ai_save, get_enemy_used_moves(battle_save), memory.wPlayerUsedMoves)
+
 	# TODO: we may need to update more values here. Check the disassembly.
 
 	# These allow us to make the game think our Pokemon is always on the last turn of Perish Song
@@ -110,6 +112,30 @@ def swap_pairings(source_save, target_save):
 
 		copy_values(source_save, player_address, target_save, enemy_address)
 		copy_values(source_save, enemy_address, target_save, player_address)
+
+
+def get_enemy_used_moves(input_save: bytearray) -> bytearray:
+	# wPlayerUsed moves keeps track of the moves the enemy has seen the player use.
+	# There's no equivalent for the enemy's moves, so this is a bit of a hack, looking for moves that aren't at full PP.
+	# There are some edge cases where this fails, but they're relatively rare and this isn't used much anyway:
+	# - If the enemy uses transform (they'll all be at less-than-full PP)
+	# - If the enemy uses struggle (it should bump something off the list, but it won't)
+	# - If the enemy switches out and back in (it should reset the list, but it won't reset PP)
+	# - If the enemy uses a MysteryBerry (fortunately, no trainers do)
+	# For completion's sake, some edge-cases that don't matter because enemies aren't players:
+	# - If the enemy learns a move in the middle of battle (can happen for player Pokémon)
+	# - If the enemy has used a PP Up
+	# - If the enemy uses Sketch (no enemies have Smeargle)
+	used_move_list = bytearray([0, 0, 0, 0])
+	enemy_moves = get_value(input_save, memory.wEnemyMonMoves)
+	enemy_pp = get_value(input_save, memory.wEnemyMonPP)
+	for i, move in enumerate(enemy_moves):
+		if move != 0:
+			expected_pp = moves[move]["pp"]
+			if enemy_pp[i] != expected_pp:
+				used_move_list[used_move_list.index(0)] = move
+				print(f"Enemy move {moves[move]['name']} used, expected PP {expected_pp} but got {enemy_pp[i]}")
+	return used_move_list
 
 
 def initial_testing():
@@ -153,9 +179,9 @@ def initial_testing():
 	# enemy_class = enemy_trainer['class']
 	# enemy_index = enemy_trainer['instance']
 	#
-	player_class = 26
+	player_class = 35
 	player_index = 1
-	enemy_class = 26
+	enemy_class = 14
 	enemy_index = 1
 
 	print(f"You are {get_trainer_identifier(player_trainer)}. Your opponent is {get_trainer_identifier(enemy_trainer)}")
