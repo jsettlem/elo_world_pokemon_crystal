@@ -163,9 +163,6 @@ def get_battle_mons(battle_save: bytearray) -> Tuple[Tuple[int, int, int, int], 
 
 def initial_testing():
 	seed = str(random.randint(0, 1000000000))
-	# it gets stuck switching if both pokemon faint at the same time
-	seed = "696440793"
-	# seed = "438215196"
 
 	rng = random.Random(seed)
 
@@ -192,6 +189,7 @@ def initial_testing():
 
 	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
+	shutil.copyfile(files.CHEAT_FILE, f"{save_working_dir}/{files.CHEAT_NAME}")
 
 	# Randomly choose a player and enemy trainer
 

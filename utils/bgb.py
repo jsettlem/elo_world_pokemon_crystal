@@ -15,6 +15,7 @@ def call_bgb(in_save: str,
 	                 '-hf' if hf else '',
 	                 '-nobatt',
 	                 '-stateonexit', out_save,
+	                 "-set", "CheatAutoSave=1",
 	                 *(['-demoplay', demo] if demo else []),
 	                 *([
 		                   "-set", "RecordAVI=1",
