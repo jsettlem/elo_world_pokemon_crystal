@@ -105,6 +105,7 @@ wEnemySubstituteHP = MemoryAddress(0xc6e0, 1)
 wDisabledMove = MemoryAddress(0xc6f5, 1)
 wEnemyDisabledMove = MemoryAddress(0xc6f6, 1)
 wCurPartyMon = MemoryAddress(0xd109, 1)
+wCurBattleMon = MemoryAddress(0xd0d4, 1)
 wCurOTMon = MemoryAddress(0xc663, 1)
 
 wEnemyItemState = MemoryAddress(0xc6e6, 1)
@@ -193,10 +194,26 @@ player_enemy_pairs = (
 	(wPlayerTurnsTaken, wEnemyTurnsTaken),
 	(wPlayerSubstituteHP, wEnemySubstituteHP),
 	(wDisabledMove, wEnemyDisabledMove),
-	(wCurPartyMon, wCurOTMon),  # TODO: check that wcurpartymon is correct
+	(wCurPartyMon, wCurOTMon),
+	(wCurBattleMon, wCurOTMon),# TODO: check that wcurbattlemon is correct
 	(wPlayerParty, wOTParty)
 )
+
+
+wPlayerUsedMoves = MemoryAddress(0xc712, 4)
+wEnemyMonMoves = MemoryAddress(0xd208, 4)
+wEnemyMonPP = MemoryAddress(0xd20e, 4)
+
+wBattleMonMoves = MemoryAddress(0xc62e, 4)
 
 wNumItems = MemoryAddress(0xd892, 1)
 wItems = MemoryAddress(0xd893, 3)
 wEnemyTrainerItems = MemoryAddress(0xc650, 2)
+
+wBattleMonSpecies = MemoryAddress(0xc62c, 1)
+wBattleMonHP = MemoryAddress(0xc63c, 2)
+wBattleMonMaxHP = MemoryAddress(0xc63e, 2)
+
+wEnemyMonSpecies = MemoryAddress(0xd206, 1)
+wEnemyMonHP = MemoryAddress(0xd216, 2)
+wEnemyMonMaxHP = MemoryAddress(0xd218, 2)

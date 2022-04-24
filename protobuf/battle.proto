@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+import "game_data.proto";
+
+message BattleBatch {
+  repeated BattleSummary battles = 1;
+}
+
+message BattleSummary {
+  string seed = 1;
+  TrainerID player = 2;
+  TrainerID enemy = 3;
+  Winner winner = 4;
+  repeated TurnDescriptor turns = 5;
+
+  enum Winner {
+    PLAYER = 0;
+    ENEMY = 1;
+    DRAW_BY_TURN_COUNT = 2;
+    DRAW_BY_EXCEPTION = 3;
+  }
+
+  message TrainerID {
+    uint32 trainer_class = 1;
+    uint32 instance = 2;
+  }
+
+  message TurnDescriptor {
+    uint32 turn_number = 1;
+    Action selected_action = 2;
+    oneof action {
+      MoveIdentifier selected_move = 3;
+      ItemIdentifier selected_item = 4;
+      uint32 selected_pokemon = 5;
+    }
+    BattleMon player_mon = 6;
+    BattleMon enemy_mon = 7;
+
+    enum Action {
+      MOVE = 0;
+      SWITCH = 1;
+      ITEM = 2;
+      FORCE_SWITCH = 3;
+    }
+
+    message BattleMon {
+      PokemonSpecies species = 1;
+      uint32 hp = 2;
+      uint32 max_hp = 3;
+      uint32 party_index = 4;
+    }
+  }
+}
+

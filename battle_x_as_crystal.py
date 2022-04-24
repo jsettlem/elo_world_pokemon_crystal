@@ -4,6 +4,7 @@ import shutil
 
 import constants.file_paths as files
 from constants.memory import wEnemyTrainerItems
+from utils.battle_logger import start_new_battle, end_battle, add_turn
 from utils.bgb import call_bgb
 from utils.data import *
 from utils.demos import *
@@ -61,13 +62,19 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 	return battle_save
 
 
-def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int], rng: random.Random, current_player_items: bytearray = None) -> bytearray:
+def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int],
+                  rng: random.Random, current_player_items: bytearray = None) -> bytearray:
 	ai_save = load_save(base_save)
 	swap_pairings(battle_save, ai_save)
 
 	set_value(ai_save, [trainer[0]], memory.wOtherTrainerClass)
 	set_value(ai_save, [trainer[0]], memory.wTrainerClass)
 	set_value(ai_save, [trainer[1]], memory.wOtherTrainerID)
+
+	# Edge case -- the AI gets confused if the player mon has no HP
+	if get_value(battle_save, memory.wEnemyMonHP) == b"\x00\x00":
+		print("It's zero!")
+		set_value(ai_save, [0x0, 0x1], memory.wBattleMonHP)
 
 	randomize_rdiv(ai_save, rng)
 
@@ -107,8 +114,7 @@ def swap_pairings(source_save, target_save):
 	# Copy data from battle save to ai save, swapping the player and enemy data
 
 	for pairing in memory.player_enemy_pairs:
-		player_address = pairing[0]
-		enemy_address = pairing[1]
+		player_address, enemy_address = pairing
 
 		copy_values(source_save, player_address, target_save, enemy_address)
 		copy_values(source_save, enemy_address, target_save, player_address)
@@ -138,10 +144,28 @@ def get_enemy_used_moves(input_save: bytearray) -> bytearray:
 	return used_move_list
 
 
+def get_battle_mons(battle_save: bytearray) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
+	return (
+		(
+			get_value(battle_save, memory.wBattleMonSpecies)[0],
+			get_stat(get_value(battle_save, memory.wBattleMonHP)),
+			get_stat(get_value(battle_save, memory.wBattleMonMaxHP)),
+			get_value(battle_save, memory.wCurPartyMon)[0]
+		),
+		(
+			get_value(battle_save, memory.wEnemyMonSpecies)[0],
+			get_stat(get_value(battle_save, memory.wEnemyMonHP)),
+			get_stat(get_value(battle_save, memory.wEnemyMonMaxHP)),
+			get_value(battle_save, memory.wCurOTMon)[0]
+		)
+	)
+
+
 def initial_testing():
-	seed = random.randint(0, 1000000000)
-	# seed = 297322721
-	print("seed", seed)
+	seed = str(random.randint(0, 1000000000))
+	# it gets stuck switching if both pokemon faint at the same time
+	seed = "696440793"
+	# seed = "438215196"
 
 	rng = random.Random(seed)
 
@@ -166,7 +190,6 @@ def initial_testing():
 	battle_save_path = f"{save_working_dir}/{files.BATTLE_SAVE}"
 	out_demo_path = f"{demo_working_dir}/{files.OUT_DEMO}"
 
-	print(files.BASE_DIR)
 	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
 
@@ -174,17 +197,19 @@ def initial_testing():
 
 	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
 
-	# player_class = player_trainer['class']
-	# player_index = player_trainer['instance']
-	# enemy_class = enemy_trainer['class']
-	# enemy_index = enemy_trainer['instance']
+	player_class = player_trainer['class']
+	player_index = player_trainer['instance']
+	enemy_class = enemy_trainer['class']
+	enemy_index = enemy_trainer['instance']
 	#
-	player_class = 35
-	player_index = 1
-	enemy_class = 14
-	enemy_index = 1
+	# player_class = 35
+	# player_index = 1
+	# enemy_class = 14
+	# enemy_index = 1
 
-	print(f"You are {get_trainer_identifier(player_trainer)}. Your opponent is {get_trainer_identifier(enemy_trainer)}")
+	battle_log = start_new_battle(seed=seed,
+	                              player=(player_class, player_index),
+	                              enemy=(enemy_class, enemy_index))
 
 	# Load the data for the player trainer
 	base_save = load_save(files.BASE_SAVE)
@@ -192,7 +217,8 @@ def initial_testing():
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
 	# Set up the initial battle state
-	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, enemy_trainer["gender"], rng)
+	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, enemy_trainer["gender"],
+	                                 rng)
 	current_player_items = get_value(player_trainer_info, wEnemyTrainerItems)
 
 	write_file(battle_save_path, battle_save)
@@ -212,6 +238,8 @@ def initial_testing():
 
 		battle_save = load_save(battle_save_path)
 
+		player_battle_mon, enemy_battle_mon = get_battle_mons(battle_save)
+
 		pc = get_program_counter(battle_save)
 		print(f'Program counter: {pc:x}')
 
@@ -220,11 +248,13 @@ def initial_testing():
 			# Player won!
 
 			print("You win!")
+			end_battle(battle_log, "PLAYER")
 			break
 		elif pc == memory.breakpoints["LostBattle"]:
 			# Enemy won!
 
 			print("You lose!")
+			end_battle(battle_log, "ENEMY")
 			break
 		elif pc == memory.breakpoints["SetUpBattlePartyMenu"]:
 			# AI is forced to switch out, what should we switch to?
@@ -237,12 +267,13 @@ def initial_testing():
 
 			                          rng=rng)
 
-			selected_pokemon_index = get_value(ai_output, memory.wCurPartyMon)[0]
+			target_pokemon = get_value(ai_output, memory.wCurPartyMon)[0]
 			current_pokemon_index = get_current_pokemon_index(battle_save)
-			print("The selected pokemon was", selected_pokemon_index, "and the current pokemon was",
+			print("The selected pokemon was", target_pokemon, "and the current pokemon was",
 			      current_pokemon_index)
 
-			button_sequence = choose_pokemon(current_pokemon_index, selected_pokemon_index)
+			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
+			add_turn(battle_log, "FORCE_SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
 		else:
 			# We're at the battle menu, what should we choose?
 
@@ -263,14 +294,16 @@ def initial_testing():
 				item_id = memory.items[ai_pc]
 				set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
 
-				selected_pokemon_index = get_value(battle_save, memory.wCurPartyMon)[0]
+				target_pokemon = get_value(battle_save, memory.wCurPartyMon)[0]
 				current_pokemon_index = get_current_pokemon_index(battle_save)
 
-				button_sequence = select_item(current_pokemon_index, selected_pokemon_index)
+				button_sequence = select_item(current_pokemon_index, target_pokemon)
 
 				write_file(battle_save_path, battle_save)
 
 				current_player_items[current_player_items.index(item_id)] = 0x0
+
+				add_turn(battle_log, "ITEM", item_id, player_battle_mon, enemy_battle_mon)
 
 			elif ai_pc == memory.breakpoints["AI_Switch"]:
 				print("The AI wants to switcharino")
@@ -281,12 +314,19 @@ def initial_testing():
 
 				button_sequence = select_switch() + choose_pokemon(current_pokemon_index, target_pokemon)
 
+				add_turn(battle_log, "SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
+
 			else:
 				selected_move_index = get_value(ai_output, memory.wCurEnemyMoveNum)[0]
 				print("The selected move was", selected_move_index)
 				current_move_index = get_value(battle_save, memory.wCurMoveNum)[0]
 
 				button_sequence = select_move(current_move_index, selected_move_index)
+
+				# TODO: how does struggle work?
+				player_moves = get_value(battle_save, memory.wBattleMonMoves)
+
+				add_turn(battle_log, "MOVE", player_moves[selected_move_index], player_battle_mon, enemy_battle_mon)
 
 		write_file(out_demo_path, button_sequence)
 

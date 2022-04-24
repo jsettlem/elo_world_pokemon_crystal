@@ -31,6 +31,10 @@ def copy_values(source: bytearray, source_address: "MemoryAddress", target: byte
 		source[source_offset - memory.GLOBAL_OFFSET:source_offset + length - memory.GLOBAL_OFFSET]
 
 
+def get_stat(stat: bytearray) -> int:
+	return stat[0] << 8 | stat[1]
+
+
 def write_file(file: str, save: bytearray) -> None:
 	with open(file, 'wb') as f:
 		f.write(save)
