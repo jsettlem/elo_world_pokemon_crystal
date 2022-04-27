@@ -1,14 +1,17 @@
 import os
 import random
 import shutil
+import string
 
 import constants.file_paths as files
 from constants.memory import wEnemyTrainerItems
-from utils.battle_logger import start_new_battle, end_battle, add_turn
+from utils.battle_logger import start_new_battle, end_battle, add_turn, make_batch
+from utils.battle_printer import print_battle_log
 from utils.bgb import call_bgb
 from utils.data import *
 from utils.demos import *
 from utils.files import *
+from utils.hashids import encode_battle, decode_battle
 from utils.movies import build_movie, MovieContext
 
 
@@ -26,7 +29,7 @@ def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, w
 
 
 def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, enemy_class: int,
-                       enemy_index: int, enemy_gender: str, rng: random.Random) -> bytearray:
+                       enemy_index: int, player_gender: str, rng: random.Random) -> bytearray:
 	battle_save = base_save.copy()
 
 	copy_values(player_trainer_info, memory.wOTParty, battle_save, memory.wPlayerParty)
@@ -43,7 +46,7 @@ def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, ene
 	copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.wPlayerName)
 	set_value(battle_save, [memory.NAME_TERMINATOR], memory.playerNameEnd)
 
-	if enemy_gender == "FEMALE" or (enemy_gender == "ENBY" and rng.random() > 0.5):
+	if player_gender == "FEMALE" or (player_gender == "ENBY" and rng.random() > 0.5):
 		set_value(battle_save, [0x1], memory.wPlayerGender)
 
 	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
@@ -140,7 +143,6 @@ def get_enemy_used_moves(input_save: bytearray) -> bytearray:
 			expected_pp = moves[move]["pp"]
 			if enemy_pp[i] != expected_pp:
 				used_move_list[used_move_list.index(0)] = move
-				print(f"Enemy move {moves[move]['name']} used, expected PP {expected_pp} but got {enemy_pp[i]}")
 	return used_move_list
 
 
@@ -161,24 +163,21 @@ def get_battle_mons(battle_save: bytearray) -> Tuple[Tuple[int, int, int, int], 
 	)
 
 
-def initial_testing():
-	seed = str(random.randint(0, 1000000000))
-
-	rng = random.Random(seed)
+def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=False):
+	rng = random.Random(run_identifier)
 
 	# Set up working directory
-	run_identifier = random.randint(1, 10000000)
-	working_dir = os.path.abspath(f"W:/elo_world_scratch/crystal/{run_identifier}")
-	output_dir = os.path.abspath(f"W:/elo_world_output/crystal/{run_identifier}")
+	working_dir = os.path.abspath(f"{files.SCRATCH_DIR}/{run_identifier}")
+	output_dir = os.path.abspath(f"{files.OUT_DIR}/{run_identifier}")
 	movie_working_dir = f"{working_dir}/movie"
 	save_working_dir = f"{working_dir}/saves"
 	demo_working_dir = f"{working_dir}/demo"
 	movie_context = MovieContext(movie_name=str(run_identifier),
 	                             movie_index=0,
 	                             movie_working_dir=movie_working_dir,
-	                             movie_output_dir=output_dir)
+	                             movie_output_dir=output_dir) if save_movie else None
 
-	for directory in [working_dir, output_dir, save_working_dir, demo_working_dir, movie_working_dir]:
+	for directory in [working_dir, save_working_dir, demo_working_dir, movie_working_dir]:
 		os.makedirs(directory, exist_ok=True)
 
 	out_save_path = f"{save_working_dir}/{files.OUT_SAVE}"
@@ -189,23 +188,16 @@ def initial_testing():
 
 	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
-	shutil.copyfile(files.CHEAT_FILE, f"{save_working_dir}/{files.CHEAT_NAME}")
+	shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
 
-	# Randomly choose a player and enemy trainer
 
-	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
 
 	player_class = player_trainer['class']
 	player_index = player_trainer['instance']
 	enemy_class = enemy_trainer['class']
 	enemy_index = enemy_trainer['instance']
-	#
-	# player_class = 35
-	# player_index = 1
-	# enemy_class = 14
-	# enemy_index = 1
 
-	battle_log = start_new_battle(seed=seed,
+	battle_log = start_new_battle(seed=run_identifier,
 	                              player=(player_class, player_index),
 	                              enemy=(enemy_class, enemy_index))
 
@@ -214,16 +206,19 @@ def initial_testing():
 
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
+
 	# Set up the initial battle state
-	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, enemy_trainer["gender"],
+	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, player_trainer["gender"],
 	                                 rng)
+
 	current_player_items = get_value(player_trainer_info, wEnemyTrainerItems)
 
 	write_file(battle_save_path, battle_save)
 	write_file(out_demo_path, generate_demo([]))
 
+	turn_count = 0
+
 	while True:
-		print(f"{current_player_items=}")
 		# Play until we reach a menu or win/lose
 		total_clocks = get_total_clocks(battle_save)
 		breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
@@ -234,24 +229,23 @@ def initial_testing():
 			f'LostBattle/{breakpoint_condition},',
 		], demo=out_demo_path, movie_context=movie_context)
 
+		if turn_count == 0:
+			# after both trainers are loaded, we should swap out the Cal patch for the exp cheat
+			shutil.copyfile(files.EXP_CHEAT, f"{save_working_dir}/{files.CHEAT_NAME}")
+
 		battle_save = load_save(battle_save_path)
 
 		player_battle_mon, enemy_battle_mon = get_battle_mons(battle_save)
 
 		pc = get_program_counter(battle_save)
-		print(f'Program counter: {pc:x}')
 
 		# Which breakpoint did we hit?
 		if pc == memory.breakpoints["WinTrainerBattle"]:
 			# Player won!
-
-			print("You win!")
 			end_battle(battle_log, "PLAYER")
 			break
 		elif pc == memory.breakpoints["LostBattle"]:
 			# Enemy won!
-
-			print("You lose!")
 			end_battle(battle_log, "ENEMY")
 			break
 		elif pc == memory.breakpoints["SetUpBattlePartyMenu"]:
@@ -262,13 +256,10 @@ def initial_testing():
 			                          working_save=ai_input_save_path,
 			                          out_save=ai_output_save_path,
 			                          trainer=(player_class, player_index),
-
 			                          rng=rng)
 
 			target_pokemon = get_value(ai_output, memory.wCurPartyMon)[0]
 			current_pokemon_index = get_current_pokemon_index(battle_save)
-			print("The selected pokemon was", target_pokemon, "and the current pokemon was",
-			      current_pokemon_index)
 
 			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
 			add_turn(battle_log, "FORCE_SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
@@ -284,10 +275,7 @@ def initial_testing():
 			                          rng=rng)
 
 			ai_pc = get_program_counter(ai_output)
-			print(f'AI program counter: {ai_pc:x}')
 			if ai_pc in memory.items.keys():
-				print("The AI wants to use an item")
-
 				set_value(battle_save, [0x1], memory.wNumItems)
 				item_id = memory.items[ai_pc]
 				set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
@@ -304,11 +292,8 @@ def initial_testing():
 				add_turn(battle_log, "ITEM", item_id, player_battle_mon, enemy_battle_mon)
 
 			elif ai_pc == memory.breakpoints["AI_Switch"]:
-				print("The AI wants to switcharino")
 				target_pokemon = get_value(ai_output, memory.wEnemySwitchMonIndex)[0] - 1
 				current_pokemon_index = get_current_pokemon_index(battle_save)
-				print("The selected pokemon was", target_pokemon, "and the current pokemon was",
-				      current_pokemon_index)
 
 				button_sequence = select_switch() + choose_pokemon(current_pokemon_index, target_pokemon)
 
@@ -316,7 +301,6 @@ def initial_testing():
 
 			else:
 				selected_move_index = get_value(ai_output, memory.wCurEnemyMoveNum)[0]
-				print("The selected move was", selected_move_index)
 				current_move_index = get_value(battle_save, memory.wCurMoveNum)[0]
 
 				button_sequence = select_move(current_move_index, selected_move_index)
@@ -327,9 +311,57 @@ def initial_testing():
 				add_turn(battle_log, "MOVE", player_moves[selected_move_index], player_battle_mon, enemy_battle_mon)
 
 		write_file(out_demo_path, button_sequence)
+		turn_count += 1
 
-	build_movie(movie_context)
+	if save_movie:
+		os.makedirs(output_dir, exist_ok=True)
+		build_movie(movie_context)
+
+	return battle_log
+
+
+def run_random_battle(seed=None, save_movie=False):
+	if seed is None:
+		seed = str(random.randint(0, 2 ** 32))
+	rng = random.Random(seed)
+	print("rng seed", seed)
+
+	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
+
+	battle_nonce = rng.randint(0, 255)
+
+	run_identifier = encode_battle(player_trainer["class"], player_trainer["instance"], enemy_trainer["class"], enemy_trainer["instance"], battle_nonce)
+
+	battle_log = run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=save_movie)
+
+	return battle_log
+
+
+def run_battle_from_hashid(hashid: str, save_movie=False):
+	player_trainer, enemy_trainer, battle_nonce = decode_battle(hashid)
+	battle_seed = hashid.replace(" ", "")
+	battle_log = run_one_battle(player_trainer, enemy_trainer, battle_seed, save_movie=save_movie)
+	return battle_log
+
+
+def run_random_battles_batch(n=5):
+	battle_logs = [run_random_battle() for _ in range(n)]
+	return make_batch(battle_logs)
+
+def test_batch_battles(n=5):
+	batches = run_random_battles_batch(n=n)
+	batch_out = save_battle_batch(batches, "test_batches")
+
+	print("batch_out", batch_out)
+
+	print("reading back batch file...")
+
+	batches_read = load_battle_batch(batch_out)
+
+	for battle in batches_read.battles:
+		print_battle_log(battle)
 
 
 if __name__ == '__main__':
-	initial_testing()
+	# run_random_battle()
+	run_battle_from_hashid("ex02 jd20", save_movie=True)

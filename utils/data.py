@@ -27,9 +27,17 @@ characters, reverse_characters = load_memory_map('data_files/charmap.json')
 moves = load_one_way_memory_map('data_files/moves.json')
 
 
-def get_player_by_class_id(class_id: int, instance_id: int) -> dict:
-	for trainer in raw_trainer_data:
+def get_player_by_trainer_index(trainer_index: int) -> dict:
+	return raw_trainer_data[trainer_index]
+
+
+def get_trainer_index(class_id: int, instance_id: int) -> int:
+	for i, trainer in enumerate(raw_trainer_data):
 		if trainer['class'] == class_id and trainer['instance'] == instance_id:
-			return trainer
+			return i
 	else:
 		raise ValueError(f"No trainer found with class_id {class_id} and instance_id {instance_id}")
+
+
+def get_player_by_class_id(class_id: int, instance_id: int) -> dict:
+	return get_player_by_trainer_index(get_trainer_index(class_id, instance_id))

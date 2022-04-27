@@ -1,9 +1,13 @@
+import os
 import struct
+import uuid
 from typing import Iterable
 
 from battle_x_as_crystal import reverse_characters
 from constants import memory
+from constants.file_paths import OUT_DIR
 from constants.memory import MemoryAddress
+from protobuf.battle_pb2 import BattleBatch
 
 
 def name_to_bytes(name: str, length: int = memory.NAME_LENGTH) -> Iterable[int]:
@@ -22,7 +26,8 @@ def set_value(target: bytearray, source: Iterable[int], address: "MemoryAddress"
 	target[offset - memory.GLOBAL_OFFSET:offset + length - memory.GLOBAL_OFFSET] = source
 
 
-def copy_values(source: bytearray, source_address: "MemoryAddress", target: bytearray,  target_address: "MemoryAddress") -> None:
+def copy_values(source: bytearray, source_address: "MemoryAddress", target: bytearray,
+                target_address: "MemoryAddress") -> None:
 	assert source_address.size == target_address.size
 	source_offset = source_address.offset
 	target_offset = target_address.offset
@@ -64,3 +69,21 @@ def get_current_pokemon_index(battle_save):
 	# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
 	current_pokemon_index = max(current_pokemon_index, 1) - 1
 	return current_pokemon_index
+
+
+def save_battle_batch(batch: BattleBatch, batch_identifier: str) -> str:
+	output_dir = os.path.abspath(f"{OUT_DIR}/batches/{batch_identifier}")
+	os.makedirs(output_dir, exist_ok=True)
+	batch_uuid = uuid.uuid4()
+	batch_file = f"{output_dir}/{batch_uuid}.bin"
+	with open(batch_file, 'wb') as f:
+		f.write(batch.SerializeToString())
+
+	return batch_file
+
+
+def load_battle_batch(path: str) -> BattleBatch:
+	with open(path, 'rb') as f:
+		batch = BattleBatch()
+		batch.ParseFromString(f.read())
+		return batch

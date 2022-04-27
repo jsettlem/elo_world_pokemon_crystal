@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
 from protobuf.battle_pb2 import *
-from utils.battle_printer import print_battle_summary, print_turn_summary
+from utils.battle_printer import print_battle_summary, print_turn_summary, print_battle_winner
 
 
 def start_new_battle(seed: str, player: Tuple[int, int], enemy: Tuple[int, int]) -> BattleSummary:
@@ -61,6 +61,8 @@ def end_battle(battle: BattleSummary, winner: str):
 			battle.winner = BattleSummary.Winner.DRAW_BY_TURN_COUNT
 		case 'EXCEPTION':
 			battle.winner = BattleSummary.Winner.DRAW_BY_EXCEPTION
+
+	print_battle_winner(battle)
 
 
 def make_batch(battles: List[BattleSummary]) -> BattleBatch:

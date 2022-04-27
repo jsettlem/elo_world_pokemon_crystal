@@ -6,12 +6,14 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.tree import Tree
 
-from protobuf import game_data_pb2
+from protobuf import game_data_pb2, battle_pb2
 from protobuf.battle_pb2 import BattleSummary
 from protobuf.game_data_pb2 import MoveIdentifier, ItemIdentifier, PokemonSpecies
 from utils.data import get_player_by_class_id
 
 import colorsys
+
+from utils.hashids import prettify_hashid
 
 console = Console(color_system="truecolor", width=120)
 
@@ -19,7 +21,7 @@ console = Console(color_system="truecolor", width=120)
 def create_panel(renderable: RenderableType, battle_id: str, subtitle: str) -> Panel:
 	return Panel(
 		renderable,
-		title=f"Battle [b u on black]{battle_id}",
+		title=f"Battle [b on black]{prettify_hashid(battle_id)}[/]",
 		subtitle=subtitle,
 		style="on grey7",
 		border_style=get_style_from_seed(battle_id),
@@ -43,7 +45,7 @@ def get_trainer_name(trainer: dict) -> str:
 		"FEMALE": "[bright_magenta]♀[/]",
 		"ENBY": "[bright_yellow]⚥[/]"
 	}
-	return f"{gender_indicators[trainer['gender']]}[b]{trainer['title']}[/b] {trainer['name']} [grey50]#{trainer['rematch']}[/] [grey30](class {trainer['class']}, instance {trainer['instance']})"
+	return f"{gender_indicators[trainer['gender']]}[b]{trainer['title']}[/b] {trainer['name']} [grey50]#{trainer['rematch']}[/] [grey30](class {trainer['class']}, instance {trainer['instance']})[/]"
 
 
 def get_pokemon_tree(pokemon: dict) -> Tree:
@@ -85,6 +87,16 @@ def print_battle_summary(battle: BattleSummary):
 	summary_columns = Columns([player_tree, enemy_tree], )
 
 	console.print(create_panel(summary_columns, battle_id, "Battle summary"))
+
+def print_battle_winner(battle: BattleSummary):
+	if battle.winner == battle_pb2.BattleSummary.PLAYER:
+		win_text = f"The player, {get_trainer_name(get_player_by_class_id(battle.player.trainer_class, battle.player.instance))}, won!"
+	elif battle.winner == battle_pb2.BattleSummary.ENEMY:
+		win_text = f"The enemy, {get_trainer_name(get_player_by_class_id(battle.enemy.trainer_class, battle.enemy.instance))}, won!"
+	else:
+		win_text = "The battle ended in a draw!"
+
+	console.print(create_panel(win_text, battle.seed, "Battle winner"))
 
 
 def get_switch_mon(mon_index: int, battle: BattleSummary) -> str:
@@ -164,3 +176,10 @@ def get_mon_summary(mon: BattleSummary.TurnDescriptor.BattleMon, party_count: in
 		mon_name,
 		health_bar
 	)
+
+def print_battle_log(battle: BattleSummary):
+	print_battle_summary(battle)
+	for i in range(len(battle.turns)):
+		print_turn_summary(battle, i)
+
+	print_battle_winner(battle)
