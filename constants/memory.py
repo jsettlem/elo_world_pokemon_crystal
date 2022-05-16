@@ -108,13 +108,25 @@ wCurPartyMon = MemoryAddress(0xd109, 1)
 wCurBattleMon = MemoryAddress(0xd0d4, 1)
 wCurOTMon = MemoryAddress(0xc663, 1)
 
+wPlayerTrappingMove = MemoryAddress(0xc72e, 1)
+wEnemyTrappingMove = MemoryAddress(0xc72f , 1)
+wPlayerWrapCount = MemoryAddress(0xc730, 1)
+wEnemyWrapCount = MemoryAddress(0xc731, 1)
+wPlayerCharging = MemoryAddress(0xc732, 1)
+wEnemyCharging = MemoryAddress(0xc733, 1)
+wPlayerRageCounter = MemoryAddress(0xc72b, 1)
+wEnemyRageCounter = MemoryAddress(0xc72c, 1)
+wPlayerMinimized = MemoryAddress(0xc6fe, 1)
+wEnemyMinimized = MemoryAddress(0xc6fa, 1)
+
 wEnemyItemState = MemoryAddress(0xc6e6, 1)
 wCurEnemyMoveNum = MemoryAddress(0xc6e9, 1)
-wEnemyMinimized = MemoryAddress(0xc6fa, 1)
 wAlreadyFailed = MemoryAddress(0xc6fb, 1)
 wCurMoveNum = MemoryAddress(0xd0d5, 1)
 wPartyMenuCursor = MemoryAddress(0xd0d8, 1)
 wEnemySwitchMonIndex = MemoryAddress(0xc718, 1)
+
+wBattleWeather = MemoryAddress(0xc70a, 1)
 
 breakpoints = {
 	"SetUpBattlePartyMenu": 0x52f7,
@@ -196,7 +208,12 @@ player_enemy_pairs = (
 	(wDisabledMove, wEnemyDisabledMove),
 	(wCurPartyMon, wCurOTMon),
 	(wCurBattleMon, wCurOTMon),# TODO: check that wcurbattlemon is correct
-	(wPlayerParty, wOTParty)
+	(wPlayerParty, wOTParty),
+	(wPlayerTrappingMove, wEnemyTrappingMove),
+	(wPlayerWrapCount, wEnemyWrapCount),
+	(wPlayerCharging, wEnemyCharging),
+	(wPlayerRageCounter, wEnemyRageCounter),
+	(wPlayerMinimized, wEnemyMinimized),
 )
 
 

@@ -86,6 +86,8 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 
 	set_value(ai_save, get_enemy_used_moves(battle_save), memory.wPlayerUsedMoves)
 
+	copy_values(battle_save, memory.wBattleWeather, ai_save, memory.wBattleWeather)
+
 	# TODO: we may need to update more values here. Check the disassembly.
 
 	# These allow us to make the game think our Pokemon is always on the last turn of Perish Song
@@ -188,8 +190,10 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
 	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
-	shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
 
+	# If the enemy trainer is Cal2, the game will try to load a mystery gift trainer
+	# This patch disables that behavior, so we can see cal's programmed but unused team
+	shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
 
 
 	player_class = player_trainer['class']
@@ -231,6 +235,8 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 		if turn_count == 0:
 			# after both trainers are loaded, we should swap out the Cal patch for the exp cheat
+			# The "patch" is really just a cheat, so I dunno if it will play nicely with rom banks
+			# I'm too lazy to figure that out, so we can just turn it off
 			shutil.copyfile(files.EXP_CHEAT, f"{save_working_dir}/{files.CHEAT_NAME}")
 
 		battle_save = load_save(battle_save_path)
@@ -328,12 +334,14 @@ def run_random_battle(seed=None, save_movie=False):
 
 	player_trainer, enemy_trainer = rng.choice(raw_trainer_data), rng.choice(raw_trainer_data)
 
+	return run_battle_with_trainers(enemy_trainer, player_trainer, rng, save_movie)
+
+
+def run_battle_with_trainers(enemy_trainer, player_trainer, rng, save_movie = False):
 	battle_nonce = rng.randint(0, 255)
-
-	run_identifier = encode_battle(player_trainer["class"], player_trainer["instance"], enemy_trainer["class"], enemy_trainer["instance"], battle_nonce)
-
+	run_identifier = encode_battle(player_trainer["class"], player_trainer["instance"], enemy_trainer["class"],
+	                               enemy_trainer["instance"], battle_nonce)
 	battle_log = run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=save_movie)
-
 	return battle_log
 
 
@@ -361,7 +369,14 @@ def test_batch_battles(n=5):
 	for battle in batches_read.battles:
 		print_battle_log(battle)
 
+def test_battles_with_all_trainers():
+	for trainer in raw_trainer_data[432:]:
+		seed = str(random.randint(0, 2 ** 32))
+		rng = random.Random(seed)
+		print("rng seed", seed)
+		run_battle_with_trainers(trainer, trainer, rng, save_movie=False)
+
 
 if __name__ == '__main__':
-	# run_random_battle()
-	run_battle_from_hashid("ex02 jd20", save_movie=True)
+	# run_battle_from_hashid("7xvy 2z80", save_movie=True)
+	test_battles_with_all_trainers()
