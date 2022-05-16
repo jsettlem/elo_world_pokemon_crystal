@@ -1,13 +1,14 @@
 import os
 import struct
 import uuid
+import zlib
 from typing import Iterable
 
-from battle_x_as_crystal import reverse_characters
 from constants import memory
 from constants.file_paths import OUT_DIR
 from constants.memory import MemoryAddress
 from protobuf.battle_pb2 import BattleBatch
+from utils.data import reverse_characters
 
 
 def name_to_bytes(name: str, length: int = memory.NAME_LENGTH) -> Iterable[int]:
@@ -71,13 +72,18 @@ def get_current_pokemon_index(battle_save):
 	return current_pokemon_index
 
 
-def save_battle_batch(batch: BattleBatch, batch_identifier: str) -> str:
+def save_battle_batch(batch: BattleBatch, batch_identifier: str, compressed=True) -> str:
 	output_dir = os.path.abspath(f"{OUT_DIR}/batches/{batch_identifier}")
 	os.makedirs(output_dir, exist_ok=True)
 	batch_uuid = uuid.uuid4()
 	batch_file = f"{output_dir}/{batch_uuid}.bin"
+	if compressed:
+		batch_file += '.gz'
 	with open(batch_file, 'wb') as f:
-		f.write(batch.SerializeToString())
+		if not compressed:
+			f.write(batch.SerializeToString())
+		else:
+			f.write(zlib.compress(batch.SerializeToString()))
 
 	return batch_file
 
@@ -85,5 +91,8 @@ def save_battle_batch(batch: BattleBatch, batch_identifier: str) -> str:
 def load_battle_batch(path: str) -> BattleBatch:
 	with open(path, 'rb') as f:
 		batch = BattleBatch()
-		batch.ParseFromString(f.read())
+		file_data = f.read()
+		if path.endswith('.gz'):
+			file_data = zlib.decompress(file_data)
+		batch.ParseFromString(file_data)
 		return batch

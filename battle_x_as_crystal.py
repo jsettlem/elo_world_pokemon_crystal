@@ -169,11 +169,14 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	rng = random.Random(run_identifier)
 
 	# Set up working directory
+
+	directory_nonce = str(rng.randint(0, 999999999))
+
 	working_dir = os.path.abspath(f"{files.SCRATCH_DIR}/{run_identifier}")
 	output_dir = os.path.abspath(f"{files.OUT_DIR}/{run_identifier}")
-	movie_working_dir = f"{working_dir}/movie"
-	save_working_dir = f"{working_dir}/saves"
-	demo_working_dir = f"{working_dir}/demo"
+	movie_working_dir = f"{working_dir}/movie_{directory_nonce}"
+	save_working_dir = f"{working_dir}/saves_{directory_nonce}"
+	demo_working_dir = f"{working_dir}/demo_{directory_nonce}"
 	movie_context = MovieContext(movie_name=str(run_identifier),
 	                             movie_index=0,
 	                             movie_working_dir=movie_working_dir,
@@ -323,6 +326,10 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 		os.makedirs(output_dir, exist_ok=True)
 		build_movie(movie_context)
 
+	for created_dir in [movie_working_dir,save_working_dir,demo_working_dir]:
+		shutil.rmtree(created_dir)
+	os.rmdir(working_dir)
+
 	return battle_log
 
 
@@ -378,5 +385,5 @@ def test_battles_with_all_trainers():
 
 
 if __name__ == '__main__':
-	# run_battle_from_hashid("7xvy 2z80", save_movie=True)
-	test_battles_with_all_trainers()
+	run_battle_from_hashid("7p!0vm56", save_movie=False)
+	# test_battles_with_all_trainers()
