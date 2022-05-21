@@ -88,6 +88,10 @@ def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out
 
 	copy_values(battle_save, memory.wBattleWeather, ai_save, memory.wBattleWeather)
 
+	# This is to work around a bug in the actual game that normally never triggers
+	# See https://twitter.com/pimanrules/status/1528137472680640513
+	set_value(ai_save, [0x0], memory.wEnemyTrainerBaseReward)
+
 	# TODO: we may need to update more values here. Check the disassembly.
 
 	# These allow us to make the game think our Pokemon is always on the last turn of Perish Song
@@ -267,7 +271,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 			                          trainer=(player_class, player_index),
 			                          rng=rng)
 
-			target_pokemon = get_value(ai_output, memory.wCurPartyMon)[0]
+			target_pokemon = get_value(ai_output, memory.wCurPartyMon)[0] #should this be wCurBattleMon? probably...
 			current_pokemon_index = get_current_pokemon_index(battle_save)
 
 			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
@@ -289,7 +293,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 				item_id = memory.items[ai_pc]
 				set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
 
-				target_pokemon = get_value(battle_save, memory.wCurPartyMon)[0]
+				target_pokemon = get_value(battle_save, memory.wCurBattleMon)[0]
 				current_pokemon_index = get_current_pokemon_index(battle_save)
 
 				button_sequence = select_item(current_pokemon_index, target_pokemon)
@@ -385,5 +389,5 @@ def test_battles_with_all_trainers():
 
 
 if __name__ == '__main__':
-	run_battle_from_hashid("7p!0vm56", save_movie=False)
+	run_battle_from_hashid("egkp p6nx", save_movie=True)
 	# test_battles_with_all_trainers()

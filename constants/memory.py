@@ -234,3 +234,5 @@ wBattleMonMaxHP = MemoryAddress(0xc63e, 2)
 wEnemyMonSpecies = MemoryAddress(0xd206, 1)
 wEnemyMonHP = MemoryAddress(0xd216, 2)
 wEnemyMonMaxHP = MemoryAddress(0xd218, 2)
+
+wEnemyTrainerBaseReward = MemoryAddress(0xc652, 1)
