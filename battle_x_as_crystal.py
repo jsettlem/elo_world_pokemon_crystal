@@ -15,10 +15,10 @@ from utils.hashids import encode_battle, decode_battle
 from utils.movies import build_movie, MovieContext
 
 
-def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, working_save: str) -> bytearray:
+def load_trainer_info(trainer_class: int, trainer_id: int, in_save: BessSave, working_save: str) -> BessSave:
 	save = in_save.copy()
-	set_value(save, [trainer_class], memory.wOtherTrainerClass)
-	set_value(save, [trainer_id], memory.wOtherTrainerID)
+	save.set_value([trainer_class], memory.wOtherTrainerClass)
+	save.set_value([trainer_id], memory.wOtherTrainerID)
 	write_file(working_save, save)
 
 	call_bgb(in_save=working_save,
@@ -28,69 +28,69 @@ def load_trainer_info(trainer_class: int, trainer_id: int, in_save: bytearray, w
 	return load_save(working_save)
 
 
-def set_up_battle_save(base_save: bytearray, player_trainer_info: bytearray, enemy_class: int,
-                       enemy_index: int, player_gender: str, rng: random.Random) -> bytearray:
+def set_up_battle_save(base_save: BessSave, player_trainer_info: BessSave, enemy_class: int,
+                       enemy_index: int, player_gender: str, rng: random.Random) -> BessSave:
 	battle_save = base_save.copy()
 
-	copy_values(player_trainer_info, memory.wOTParty, battle_save, memory.wPlayerParty)
+	player_trainer_info.copy_values(memory.wOTParty, battle_save, memory.wPlayerParty)
 
-	enemy_party_size = get_value(player_trainer_info, memory.wOTPartyCount)[0]
+	enemy_party_size = player_trainer_info.get_value(memory.wOTPartyCount)[0]
 
 	for i in range(enemy_party_size):
-		pokemon = get_value(player_trainer_info, memory.enemyParty[i])
+		pokemon = player_trainer_info.get_value(memory.enemyParty[i])
 		pokemon_index = pokemon[0] - 1
 		pokemon_name = name_to_bytes(pokemon_names[str(pokemon_index)])
-		set_value(battle_save, pokemon_name, memory.playerPartyNicks[i])
-		copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.playerPartyOTs[i])
+		battle_save.set_value(pokemon_name, memory.playerPartyNicks[i])
+		player_trainer_info.copy_values(memory.wStringBuffer1, battle_save, memory.playerPartyOTs[i])
 
-	copy_values(player_trainer_info, memory.wStringBuffer1, battle_save, memory.wPlayerName)
-	set_value(battle_save, [memory.NAME_TERMINATOR], memory.playerNameEnd)
+	player_trainer_info.copy_values(memory.wStringBuffer1, battle_save, memory.wPlayerName)
+	battle_save.set_value([memory.NAME_TERMINATOR], memory.playerNameEnd)
 
 	if player_gender == "FEMALE" or (player_gender == "ENBY" and rng.random() > 0.5):
-		set_value(battle_save, [0x1], memory.wPlayerGender)
+		battle_save.set_value([0x1], memory.wPlayerGender)
 
-	set_value(battle_save, [enemy_class], memory.wOtherTrainerClass)
-	set_value(battle_save, [enemy_class], memory.wTrainerClass)
-	set_value(battle_save, [enemy_index], memory.wOtherTrainerID)
+	battle_save.set_value([enemy_class], memory.wOtherTrainerClass)
+	battle_save.set_value([enemy_class], memory.wTrainerClass)
+	battle_save.set_value([enemy_index], memory.wOtherTrainerID)
 
-	randomize_rdiv(battle_save, rng)
+	battle_save.randomize_rdiv(rng)
 
 	# randomize textbox frame
-	set_value(battle_save, [rng.randint(0, 8)], memory.wTextboxFrame)
+	battle_save.set_value([rng.randint(0, 8)], memory.wTextboxFrame)
 
-	set_value(battle_save, [0x1], memory.wNumItems)
+	battle_save.set_value([0x1], memory.wNumItems)
 	item_id = memory.itemXAttack
-	set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
+	battle_save.set_value([item_id, 0x1, 0xff], memory.wItems)
 
 	return battle_save
 
 
-def get_ai_action(battle_save: bytearray, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int],
-                  rng: random.Random, current_player_items: bytearray = None) -> bytearray:
+def get_ai_action(battle_save: BessSave, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int],
+                  rng: random.Random, current_player_items: bytearray = None) -> BessSave:
 	ai_save = load_save(base_save)
 	swap_pairings(battle_save, ai_save)
 
-	set_value(ai_save, [trainer[0]], memory.wOtherTrainerClass)
-	set_value(ai_save, [trainer[0]], memory.wTrainerClass)
-	set_value(ai_save, [trainer[1]], memory.wOtherTrainerID)
+	ai_save.set_value([trainer[0]], memory.wOtherTrainerClass)
+	ai_save.set_value([trainer[0]], memory.wTrainerClass)
+	ai_save.set_value([trainer[1]], memory.wOtherTrainerID)
 
 	# Edge case -- the AI gets confused if the player mon has no HP
-	if get_value(battle_save, memory.wEnemyMonHP) == b"\x00\x00":
+	if battle_save.get_value(memory.wEnemyMonHP) == b"\x00\x00":
 		print("It's zero!")
-		set_value(ai_save, [0x0, 0x1], memory.wBattleMonHP)
+		ai_save.set_value([0x0, 0x1], memory.wBattleMonHP)
 
-	randomize_rdiv(ai_save, rng)
+	ai_save.randomize_rdiv(rng)
 
 	if current_player_items is not None:
-		set_value(ai_save, current_player_items, memory.wEnemyTrainerItems)
+		ai_save.set_value(current_player_items, memory.wEnemyTrainerItems)
 
-	set_value(ai_save, get_enemy_used_moves(battle_save), memory.wPlayerUsedMoves)
+	ai_save.set_value(get_enemy_used_moves(battle_save), memory.wPlayerUsedMoves)
 
-	copy_values(battle_save, memory.wBattleWeather, ai_save, memory.wBattleWeather)
+	battle_save.copy_values(memory.wBattleWeather, ai_save, memory.wBattleWeather)
 
 	# This is to work around a bug in the actual game that normally never triggers
 	# See https://twitter.com/pimanrules/status/1528137472680640513
-	set_value(ai_save, [0x0], memory.wEnemyTrainerBaseReward)
+	ai_save.set_value([0x0], memory.wEnemyTrainerBaseReward)
 
 	# TODO: we may need to update more values here. Check the disassembly.
 
@@ -125,11 +125,11 @@ def swap_pairings(source_save, target_save):
 	for pairing in memory.player_enemy_pairs:
 		player_address, enemy_address = pairing
 
-		copy_values(source_save, player_address, target_save, enemy_address)
-		copy_values(source_save, enemy_address, target_save, player_address)
+		source_save.copy_values(player_address, target_save, enemy_address)
+		source_save.copy_values(enemy_address, target_save, player_address)
 
 
-def get_enemy_used_moves(input_save: bytearray) -> bytearray:
+def get_enemy_used_moves(input_save: BessSave) -> bytearray:
 	# wPlayerUsed moves keeps track of the moves the enemy has seen the player use.
 	# There's no equivalent for the enemy's moves, so this is a bit of a hack, looking for moves that aren't at full PP.
 	# There are some edge cases where this fails, but they're relatively rare and this isn't used much anyway:
@@ -142,8 +142,8 @@ def get_enemy_used_moves(input_save: bytearray) -> bytearray:
 	# - If the enemy has used a PP Up
 	# - If the enemy uses Sketch (no enemies have Smeargle)
 	used_move_list = bytearray([0, 0, 0, 0])
-	enemy_moves = get_value(input_save, memory.wEnemyMonMoves)
-	enemy_pp = get_value(input_save, memory.wEnemyMonPP)
+	enemy_moves = input_save.get_value(memory.wEnemyMonMoves)
+	enemy_pp = input_save.get_value(memory.wEnemyMonPP)
 	for i, move in enumerate(enemy_moves):
 		if move != 0:
 			expected_pp = moves[move]["pp"]
@@ -152,19 +152,19 @@ def get_enemy_used_moves(input_save: bytearray) -> bytearray:
 	return used_move_list
 
 
-def get_battle_mons(battle_save: bytearray) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
+def get_battle_mons(battle_save: BessSave) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
 	return (
 		(
-			get_value(battle_save, memory.wBattleMonSpecies)[0],
-			get_stat(get_value(battle_save, memory.wBattleMonHP)),
-			get_stat(get_value(battle_save, memory.wBattleMonMaxHP)),
-			get_value(battle_save, memory.wCurPartyMon)[0]
+			battle_save.get_value(memory.wBattleMonSpecies)[0],
+			get_stat(battle_save.get_value(memory.wBattleMonHP)),
+			get_stat(battle_save.get_value(memory.wBattleMonMaxHP)),
+			battle_save.get_value(memory.wCurPartyMon)[0]
 		),
 		(
-			get_value(battle_save, memory.wEnemyMonSpecies)[0],
-			get_stat(get_value(battle_save, memory.wEnemyMonHP)),
-			get_stat(get_value(battle_save, memory.wEnemyMonMaxHP)),
-			get_value(battle_save, memory.wCurOTMon)[0]
+			battle_save.get_value(memory.wEnemyMonSpecies)[0],
+			get_stat(battle_save.get_value(memory.wEnemyMonHP)),
+			get_stat(battle_save.get_value(memory.wEnemyMonMaxHP)),
+			battle_save.get_value(memory.wCurOTMon)[0]
 		)
 	)
 
@@ -202,7 +202,6 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	# This patch disables that behavior, so we can see cal's programmed but unused team
 	shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
 
-
 	player_class = player_trainer['class']
 	player_index = player_trainer['instance']
 	enemy_class = enemy_trainer['class']
@@ -222,7 +221,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, player_trainer["gender"],
 	                                 rng)
 
-	current_player_items = get_value(player_trainer_info, wEnemyTrainerItems)
+	current_player_items = player_trainer_info.get_value(wEnemyTrainerItems)
 
 	write_file(battle_save_path, battle_save)
 	write_file(out_demo_path, generate_demo([]))
@@ -231,7 +230,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 	while True:
 		# Play until we reach a menu or win/lose
-		total_clocks = get_total_clocks(battle_save)
+		total_clocks = battle_save.get_total_clocks()
 		breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
 		call_bgb(in_save=battle_save_path, out_save=battle_save_path, breakpoint_list=[
 			f'BattleMenu/{breakpoint_condition}',
@@ -250,7 +249,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 		player_battle_mon, enemy_battle_mon = get_battle_mons(battle_save)
 
-		pc = get_program_counter(battle_save)
+		pc = battle_save.get_program_counter()
 
 		# Which breakpoint did we hit?
 		if pc == memory.breakpoints["WinTrainerBattle"]:
@@ -271,7 +270,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 			                          trainer=(player_class, player_index),
 			                          rng=rng)
 
-			target_pokemon = get_value(ai_output, memory.wCurPartyMon)[0] #should this be wCurBattleMon? probably...
+			target_pokemon = ai_output.get_value(memory.wCurPartyMon)[0] #should this be wCurBattleMon? probably...
 			current_pokemon_index = get_current_pokemon_index(battle_save)
 
 			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
@@ -287,13 +286,13 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 			                          current_player_items=current_player_items,
 			                          rng=rng)
 
-			ai_pc = get_program_counter(ai_output)
+			ai_pc = ai_output.get_program_counter()
 			if ai_pc in memory.items.keys():
-				set_value(battle_save, [0x1], memory.wNumItems)
+				battle_save.set_value([0x1], memory.wNumItems)
 				item_id = memory.items[ai_pc]
-				set_value(battle_save, [item_id, 0x1, 0xff], memory.wItems)
+				battle_save.set_value([item_id, 0x1, 0xff], memory.wItems)
 
-				target_pokemon = get_value(battle_save, memory.wCurBattleMon)[0]
+				target_pokemon = battle_save.get_value(memory.wCurBattleMon)[0]
 				current_pokemon_index = get_current_pokemon_index(battle_save)
 
 				button_sequence = select_item(current_pokemon_index, target_pokemon)
@@ -305,7 +304,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 				add_turn(battle_log, "ITEM", item_id, player_battle_mon, enemy_battle_mon)
 
 			elif ai_pc == memory.breakpoints["AI_Switch"]:
-				target_pokemon = get_value(ai_output, memory.wEnemySwitchMonIndex)[0] - 1
+				target_pokemon = ai_output.get_value(memory.wEnemySwitchMonIndex)[0] - 1
 				current_pokemon_index = get_current_pokemon_index(battle_save)
 
 				button_sequence = select_switch() + choose_pokemon(current_pokemon_index, target_pokemon)
@@ -313,13 +312,13 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 				add_turn(battle_log, "SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
 
 			else:
-				selected_move_index = get_value(ai_output, memory.wCurEnemyMoveNum)[0]
-				current_move_index = get_value(battle_save, memory.wCurMoveNum)[0]
+				selected_move_index = ai_output.get_value(memory.wCurEnemyMoveNum)[0]
+				current_move_index = battle_save.get_value(memory.wCurMoveNum)[0]
 
 				button_sequence = select_move(current_move_index, selected_move_index)
 
 				# TODO: how does struggle work?
-				player_moves = get_value(battle_save, memory.wBattleMonMoves)
+				player_moves = battle_save.get_value(memory.wBattleMonMoves)
 
 				add_turn(battle_log, "MOVE", player_moves[selected_move_index], player_battle_mon, enemy_battle_mon)
 
@@ -389,5 +388,5 @@ def test_battles_with_all_trainers():
 
 
 if __name__ == '__main__':
-	run_battle_from_hashid("egkp p6nx", save_movie=True)
+	run_random_battle(save_movie=True)
 	# test_battles_with_all_trainers()

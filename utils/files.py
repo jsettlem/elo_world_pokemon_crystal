@@ -8,6 +8,7 @@ from constants import memory
 from constants.file_paths import OUT_DIR
 from constants.memory import MemoryAddress
 from protobuf.battle_pb2 import BattleBatch
+from utils.besssave import BessSave
 from utils.data import reverse_characters
 
 
@@ -15,58 +16,26 @@ def name_to_bytes(name: str, length: int = memory.NAME_LENGTH) -> Iterable[int]:
 	return (reverse_characters[name[i]] if i < len(name) else memory.NAME_TERMINATOR for i in range(length))
 
 
-def get_value(source: bytearray, address: "MemoryAddress") -> bytearray:
-	offset = address.offset
-	length = address.size
-	return source[offset - memory.GLOBAL_OFFSET:offset + length - memory.GLOBAL_OFFSET]
-
-
-def set_value(target: bytearray, source: Iterable[int], address: "MemoryAddress") -> None:
-	offset = address.offset
-	length = address.size
-	target[offset - memory.GLOBAL_OFFSET:offset + length - memory.GLOBAL_OFFSET] = source
-
-
-def copy_values(source: bytearray, source_address: "MemoryAddress", target: bytearray,
-                target_address: "MemoryAddress") -> None:
-	assert source_address.size == target_address.size
-	source_offset = source_address.offset
-	target_offset = target_address.offset
-	length = source_address.size
-	target[target_offset - memory.GLOBAL_OFFSET:target_offset + length - memory.GLOBAL_OFFSET] = \
-		source[source_offset - memory.GLOBAL_OFFSET:source_offset + length - memory.GLOBAL_OFFSET]
-
-
 def get_stat(stat: bytearray) -> int:
 	return stat[0] << 8 | stat[1]
 
 
-def write_file(file: str, save: bytearray) -> None:
+def write_file(file: str, save: BessSave | bytearray) -> None:
 	with open(file, 'wb') as f:
-		f.write(save)
+		if type(save) == BessSave:
+			f.write(save.save)
+		else:
+			f.write(save)
 
 
-def load_save(file: str) -> bytearray:
+def load_save(file: str) -> BessSave:
 	with open(file, 'rb') as f:
 		save = bytearray(f.read())
-	return save
+	return BessSave(save)
 
 
-def get_total_clocks(source: bytearray) -> int:
-	return struct.unpack_from("<Q", source[memory.TOTAL_CLOCKS_OFFSET:])[0] & 0x7f_ff_ff_ff
-
-
-def get_program_counter(source: bytearray) -> int:
-	return (source[memory.PC_OFFSET + 1] << 8) | source[memory.PC_OFFSET]
-
-
-def randomize_rdiv(source: bytearray, rng):
-	random_clock = [rng.randint(0, 255) for _ in range(2)]
-	source[memory.DIVISOR_OFFSET:memory.DIVISOR_OFFSET + 2] = random_clock
-
-
-def get_current_pokemon_index(battle_save):
-	current_pokemon_index = get_value(battle_save, memory.wPartyMenuCursor)[0]
+def get_current_pokemon_index(battle_save: BessSave):
+	current_pokemon_index = battle_save.get_value(memory.wPartyMenuCursor)[0]
 	# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
 	current_pokemon_index = max(current_pokemon_index, 1) - 1
 	return current_pokemon_index
