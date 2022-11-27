@@ -216,7 +216,6 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
-
 	# Set up the initial battle state
 	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, player_trainer["gender"],
 	                                 rng)
@@ -270,7 +269,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 			                          trainer=(player_class, player_index),
 			                          rng=rng)
 
-			target_pokemon = ai_output.get_value(memory.wCurPartyMon)[0] #should this be wCurBattleMon? probably...
+			target_pokemon = ai_output.get_value(memory.wCurPartyMon)[0]  # should this be wCurBattleMon? probably...
 			current_pokemon_index = get_current_pokemon_index(battle_save)
 
 			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
@@ -329,7 +328,7 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 		os.makedirs(output_dir, exist_ok=True)
 		build_movie(movie_context)
 
-	for created_dir in [movie_working_dir,save_working_dir,demo_working_dir]:
+	for created_dir in [movie_working_dir, save_working_dir, demo_working_dir]:
 		shutil.rmtree(created_dir)
 	os.rmdir(working_dir)
 
@@ -347,7 +346,7 @@ def run_random_battle(seed=None, save_movie=False):
 	return run_battle_with_trainers(enemy_trainer, player_trainer, rng, save_movie)
 
 
-def run_battle_with_trainers(enemy_trainer, player_trainer, rng, save_movie = False):
+def run_battle_with_trainers(enemy_trainer, player_trainer, rng, save_movie=False):
 	battle_nonce = rng.randint(0, 255)
 	run_identifier = encode_battle(player_trainer["class"], player_trainer["instance"], enemy_trainer["class"],
 	                               enemy_trainer["instance"], battle_nonce)
@@ -366,6 +365,7 @@ def run_random_battles_batch(n=5):
 	battle_logs = [run_random_battle() for _ in range(n)]
 	return make_batch(battle_logs)
 
+
 def test_batch_battles(n=5):
 	batches = run_random_battles_batch(n=n)
 	batch_out = save_battle_batch(batches, "test_batches")
@@ -379,6 +379,7 @@ def test_batch_battles(n=5):
 	for battle in batches_read.battles:
 		print_battle_log(battle)
 
+
 def test_battles_with_all_trainers():
 	for trainer in raw_trainer_data[432:]:
 		seed = str(random.randint(0, 2 ** 32))
@@ -388,5 +389,52 @@ def test_battles_with_all_trainers():
 
 
 if __name__ == '__main__':
-	run_random_battle(save_movie=True)
-	# test_battles_with_all_trainers()
+	trainer_Blue = get_player_by_class_id(64, 1)
+	trainer_Surge = get_player_by_class_id(19, 1)
+	trainer_Will = get_player_by_class_id(11, 1)
+	trainer_Cal = get_player_by_class_id(12, 3)
+	trainer_Meganium = get_player_by_class_id(42, 4)
+	trainer_Blaine = get_player_by_class_id(46, 1)
+	trainer_Typhlosion = get_player_by_class_id(42, 5)
+	trainer_Reena = get_player_by_class_id(28, 20)
+	trainer_Lance = get_player_by_class_id(16, 1)
+	trainer_Claire = get_player_by_class_id(8, 1)
+	trainer_Misty = get_player_by_class_id(18, 1)
+	trainer_Sabrina = get_player_by_class_id(35, 1)
+	trainer_Feraligatr = get_player_by_class_id(42, 6)
+	trainer_Koga = get_player_by_class_id(15, 1)
+	trainer_Karen = get_player_by_class_id(14, 1)
+	trainer_Bruno = get_player_by_class_id(13, 1)
+	trainer_Red = get_player_by_class_id(63, 1)
+
+	logs = []
+
+	# logs.append(run_battle_with_trainers(trainer_Blue, trainer_Surge, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Will, trainer_Cal, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Meganium, trainer_Blaine, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(
+	# 	run_battle_with_trainers(trainer_Typhlosion, trainer_Reena, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Lance, trainer_Claire, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Misty, trainer_Sabrina, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Feraligatr, trainer_Koga, random.Random("sweet_16_1"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Karen, trainer_Bruno, random.Random("sweet_16_1"), save_movie=True))
+
+	# logs.append(run_battle_with_trainers(trainer_Blue, trainer_Cal, random.Random("sweet_16_2"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Meganium, trainer_Typhlosion, random.Random("sweet_16_2"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Lance, trainer_Misty, random.Random("sweet_16_2"), save_movie=True))
+	# logs.append(run_battle_with_trainers(trainer_Feraligatr, trainer_Bruno, random.Random("sweet_16_2"), save_movie=True))
+	# logs.append(
+	# 	run_battle_with_trainers(trainer_Blue, trainer_Typhlosion, random.Random("sweet_16_3"), save_movie=True))
+	# logs.append(
+	# 	run_battle_with_trainers(trainer_Lance, trainer_Feraligatr, random.Random("sweet_16_3"), save_movie=True))
+
+	# logs.append(run_battle_with_trainers(trainer_Blue, trainer_Feraligatr, random.Random("sweet_16_3"), save_movie=True))
+
+
+	# for log in logs:
+	# 	print(log.seed)
+
+	run_battle_from_hashid("k9yng02dq6", save_movie=True)
+
+# run_random_battle(save_movie=True)
+# test_battles_with_all_trainers()

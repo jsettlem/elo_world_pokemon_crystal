@@ -2,7 +2,10 @@ import os
 
 # static files
 BASE_DIR = os.path.abspath("static_files")
-BGB_PATH = f"{BASE_DIR}/bgb/bgb.exe"
+BGB_NAME = "bgb.exe"
+BGB_INI_NAME = "bgb.ini"
+BGB_PATH = f"{BASE_DIR}/bgb/{BGB_NAME}"
+BGB_INI_PATH = f"{BASE_DIR}/bgb/{BGB_INI_NAME}"
 ROM_NAME = "pokecrystal11.gbc"
 MEMORY_MAP_NAME = "pokecrystal11.sym"
 CHEAT_NAME = "pokecrystal11.cht"
@@ -23,4 +26,5 @@ BATTLE_SAVE = "battlestate.sn1"
 OUT_DEMO = "outdemo.dem"
 
 OUT_DIR = "W:/elo_world_output/crystal/"
-SCRATCH_DIR = "W:/elo_world_scratch/crystal/"
+# SCRATCH_DIR = "W:/elo_world_scratch/crystal/"
+SCRATCH_DIR = "R:/"

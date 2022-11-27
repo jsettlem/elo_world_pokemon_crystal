@@ -1,5 +1,6 @@
-protobuf~=3.20.1
+protobuf~=4.21.1
 rich~=10.16.1
 hashids~=1.0.2
 flask[command]~=2.1.2
 requests[command]~=2.27.1
+joblib[command]~=1.1.0

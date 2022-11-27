@@ -41,8 +41,9 @@ def get_current_pokemon_index(battle_save: BessSave):
 	return current_pokemon_index
 
 
-def save_battle_batch(batch: BattleBatch, batch_identifier: str, compressed=True) -> str:
-	output_dir = os.path.abspath(f"{OUT_DIR}/batches/{batch_identifier}")
+def save_battle_batch(batch: BattleBatch, batch_identifier: str="batch", compressed=True, output_dir=None) -> str:
+	if output_dir is None:
+		output_dir = os.path.abspath(f"{OUT_DIR}/batches/{batch_identifier}")
 	os.makedirs(output_dir, exist_ok=True)
 	batch_uuid = uuid.uuid4()
 	batch_file = f"{output_dir}/{batch_uuid}.bin"
@@ -52,7 +53,7 @@ def save_battle_batch(batch: BattleBatch, batch_identifier: str, compressed=True
 		if not compressed:
 			f.write(batch.SerializeToString())
 		else:
-			f.write(zlib.compress(batch.SerializeToString()))
+			f.write(zlib.compress(batch.SerializeToString(), level=9))
 
 	return batch_file
 
@@ -60,8 +61,11 @@ def save_battle_batch(batch: BattleBatch, batch_identifier: str, compressed=True
 def load_battle_batch(path: str) -> BattleBatch:
 	with open(path, 'rb') as f:
 		batch = BattleBatch()
+		print("reading file")
 		file_data = f.read()
 		if path.endswith('.gz'):
+			print("decompressing file")
 			file_data = zlib.decompress(file_data)
+		print("parsing file")
 		batch.ParseFromString(file_data)
 		return batch
