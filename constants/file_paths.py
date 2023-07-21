@@ -25,6 +25,8 @@ AI_OUTPUT_SAVE = "ai_output.sn1"
 BATTLE_SAVE = "battlestate.sn1"
 OUT_DEMO = "outdemo.dem"
 
-OUT_DIR = "W:/elo_world_output/crystal/"
-# SCRATCH_DIR = "W:/elo_world_scratch/crystal/"
-SCRATCH_DIR = "R:/"
+# OUT_DIR = "W:/elo_world_output/crystal/"
+# SCRATCH_DIR = "R:/"
+
+OUT_DIR = "./output"
+SCRATCH_DIR = "./scratch"

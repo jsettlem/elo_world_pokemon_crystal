@@ -464,7 +464,6 @@ if __name__ == '__main__':
 	# for log in logs:
 	# 	print(log.seed)
 
-	run_battle_from_hashid("7!3y3dow", save_movie=True)
 
 
 	# run_battle_with_trainers(trainer_Blaine, trainer_Misty, random.Random("garbagewowow"), save_movie=True)
@@ -478,6 +477,8 @@ if __name__ == '__main__':
 	# run_battle_from_hashid("en153y37", save_movie=True)
 	# run_battle_with_trainers(get_player_by_class_id(34, 2), get_player_by_class_id(59, 8), random.Random("baton-pass-battles"), save_movie=True)
 	# run_random_battle(save_movie=False)
+
+	run_battle_from_hashid("7!3y3dow", save_movie=True)
 
 # run_random_battle(save_movie=False)
 # test_battles_with_all_trainers()
