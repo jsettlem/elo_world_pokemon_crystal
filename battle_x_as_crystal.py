@@ -216,6 +216,8 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
 
+	# return fetch_trainer_party_moves(player_trainer_info)
+
 	# Set up the initial battle state
 	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, player_trainer["gender"],
 	                                 rng)
@@ -387,27 +389,55 @@ def test_battles_with_all_trainers():
 		print("rng seed", seed)
 		run_battle_with_trainers(trainer, trainer, rng, save_movie=False)
 
+def fetch_trainer_parties():
+	raw_trainer_parties = []
+	for trainer in raw_trainer_data:
+		party = run_one_battle(
+			player_trainer=get_player_by_class_id(trainer["class"], trainer["instance"]),
+			enemy_trainer=get_player_by_class_id(trainer["class"], trainer["instance"]),
+			run_identifier="get_trainer_party",
+		)
+		raw_trainer_parties.append({'class': trainer["class"], 'instance': trainer["instance"], "moves": list(party)})
+
+	with open("raw_trainer_movesets.json", "w") as f:
+		json.dump(raw_trainer_parties, f, indent=4)
+
+def fetch_trainer_party_moves(save: BessSave):
+	party_moves = []
+	party_count = save.get_value(memory.wOTPartyCount)[0]
+	for i in range(party_count):
+		mon_struct = save.get_value(memory.enemyParty[i])
+		party_moves.append(list(mon_struct[2:6]))
+
+
+	return party_moves
+
 
 if __name__ == '__main__':
-	trainer_Blue = get_player_by_class_id(64, 1)
-	trainer_Surge = get_player_by_class_id(19, 1)
-	trainer_Will = get_player_by_class_id(11, 1)
+	# fetch_trainer_parties()
+	# trainer_Blue = get_player_by_class_id(64, 1)
+	# trainer_Surge = get_player_by_class_id(19, 1)
+	# trainer_Will = get_player_by_class_id(11, 1)
 	trainer_Cal = get_player_by_class_id(12, 3)
-	trainer_Meganium = get_player_by_class_id(42, 4)
+	# trainer_Meganium = get_player_by_class_id(42, 4)
 	trainer_Blaine = get_player_by_class_id(46, 1)
-	trainer_Typhlosion = get_player_by_class_id(42, 5)
-	trainer_Reena = get_player_by_class_id(28, 20)
-	trainer_Lance = get_player_by_class_id(16, 1)
-	trainer_Claire = get_player_by_class_id(8, 1)
+	# trainer_Typhlosion = get_player_by_class_id(42, 5)
+	# trainer_Reena = get_player_by_class_id(28, 20)
+	# trainer_Lance = get_player_by_class_id(16, 1)
+	# trainer_Claire = get_player_by_class_id(8, 1)
 	trainer_Misty = get_player_by_class_id(18, 1)
-	trainer_Sabrina = get_player_by_class_id(35, 1)
-	trainer_Feraligatr = get_player_by_class_id(42, 6)
-	trainer_Koga = get_player_by_class_id(15, 1)
-	trainer_Karen = get_player_by_class_id(14, 1)
-	trainer_Bruno = get_player_by_class_id(13, 1)
-	trainer_Red = get_player_by_class_id(63, 1)
-
-	logs = []
+	# trainer_Sabrina = get_player_by_class_id(35, 1)
+	# trainer_Feraligatr = get_player_by_class_id(42, 6)
+	# trainer_Koga = get_player_by_class_id(15, 1)
+	# trainer_Karen = get_player_by_class_id(14, 1)
+	# trainer_Bruno = get_player_by_class_id(13, 1)
+	# trainer_Red = get_player_by_class_id(63, 1)
+	#
+	trainer_Cal2 = get_player_by_class_id(12, 2)
+	#
+	# logs = []
+	#
+	# run_battle_with_trainers(trainer_Cal2, trainer_Misty, random.Random("sweet_16_1"), save_movie=False)
 
 	# logs.append(run_battle_with_trainers(trainer_Blue, trainer_Surge, random.Random("sweet_16_1"), save_movie=True))
 	# logs.append(run_battle_with_trainers(trainer_Will, trainer_Cal, random.Random("sweet_16_1"), save_movie=True))
@@ -434,7 +464,20 @@ if __name__ == '__main__':
 	# for log in logs:
 	# 	print(log.seed)
 
-	run_battle_from_hashid("k9yng02dq6", save_movie=True)
+	run_battle_from_hashid("7!3y3dow", save_movie=True)
 
-# run_random_battle(save_movie=True)
+
+	# run_battle_with_trainers(trainer_Blaine, trainer_Misty, random.Random("garbagewowow"), save_movie=True)
+	# run_battle_with_trainers(trainer_Misty, trainer_Blaine, random.Random("garbagewowow"), save_movie=True)
+
+	#ditto battles
+	# run_battle_with_trainers(get_player_by_class_id(20, 2), get_player_by_class_id(22, 4), random.Random("ditto-battles"), save_movie=True)
+	# run_battle_with_trainers(get_player_by_class_id(22, 4), get_player_by_class_id(20, 2), random.Random("ditto-battles"), save_movie=True)
+
+	#baton pass battles
+	# run_battle_from_hashid("en153y37", save_movie=True)
+	# run_battle_with_trainers(get_player_by_class_id(34, 2), get_player_by_class_id(59, 8), random.Random("baton-pass-battles"), save_movie=True)
+	# run_random_battle(save_movie=False)
+
+# run_random_battle(save_movie=False)
 # test_battles_with_all_trainers()

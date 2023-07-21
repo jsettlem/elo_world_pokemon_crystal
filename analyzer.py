@@ -1,3 +1,4 @@
+import csv
 import os.path
 import pickle
 import random
@@ -12,7 +13,7 @@ from rich.pretty import pprint
 from analysis_models.trainer import Trainer, Battle, Pokémon
 from battle_x_as_crystal import run_battle_from_hashid
 from protobuf.battle_pb2 import BattleSummary
-from protobuf.game_data_pb2 import MoveIdentifier
+from protobuf.game_data_pb2 import MoveIdentifier, BATON_PASS, STRUGGLE
 from utils.battle_printer import print_battle_log
 from utils.data import get_player_by_class_id
 from utils.files import load_battle_batch
@@ -261,12 +262,48 @@ def print_trainer_biggest_upsets(trainerList: List[Trainer]):
 			"\t".join((f"{trainer.class_id},{trainer.instance_id}", biggest_upset.seed, biggest_upset.losing_trainer.full_name, str(biggest_upset.losing_trainer.elo), biggest_defeat.seed, biggest_defeat.winning_trainer.full_name, str(biggest_defeat.winning_trainer.elo))))
 
 
+def augment_trainer_data(trainer_list):
+	csv_trainers = dict()
+	with open("./trainer_cards/trainer data.csv", "r", encoding="utf-8") as f:
+		csv_reader = csv.DictReader(f)
+		for line in csv_reader:
+			csv_trainers[(int(line["class"]), int(line["instance"]))] = line
+	trainer_list.sort(key=lambda t: t.elo, reverse=True)
+	for i, trainer in enumerate(trainer_list):
+		trainer_csv_data = csv_trainers.get((trainer.class_id, trainer.instance_id), None)
+		trainer.rank = i + 1
+		trainer.is_unused = trainer_csv_data["Location"] == "Unused"
+		if not trainer.is_unused:
+			trainer.continent = "Kanto" if int(trainer_csv_data["Location Index"]) > 43 else "Johto"
+		trainer.area = trainer_csv_data["Location"]
+		trainer.game_index = int(trainer_csv_data["Order within game"]) if trainer_csv_data["Order within game"] else None
+		trainer.is_rematch = trainer_csv_data["Is real rematch"] == "TRUE"
+		trainer.tier = trainer_csv_data["Rank"]
+
+	sys.setrecursionlimit(1000000)
+	with open('omega_augmented_trainer_list.pickle', 'wb') as f:
+		f.write(zlib.compress(
+			pickle.dumps(trainer_list, protocol=pickle.HIGHEST_PROTOCOL),
+			level=9)
+		)
+
+
+
+
 def main():
 	(battles, trainers, raw_battles) = load_data()
+	print('battle count', len(battles))
+	return
 	trainer_list = list(trainers.values())
-	battle_list = list(battles.values())
+	battle_list: List[Battle] = list(battles.values())
+	for battle in raw_battles:
+		if any(t.selected_move == STRUGGLE for t in battle.turns):
+			print("struggle battle", battle.seed)
 
 	print("all done here")
+
+	print("augmenting trainer data...")
+	augment_trainer_data(trainer_list)
 
 	print("longest battles:")
 	print_longest_battles(raw_battles)
@@ -332,6 +369,8 @@ def load_data():
 
 		new_battle.losing_trainer.losses += 1
 		new_battle.losing_trainer.defeats.append(new_battle)
+
+
 	print(len(battles))
 	print(len(trainers))
 	elo_trainers, elo_hfa = calculate_trainer_elo(raw_battles)
@@ -352,6 +391,23 @@ def load_data():
 		)
 	return battles, trainers, raw_battles
 
+def run_random_battles_forever():
+	(battles, trainers, raw_battles) = load_data()
+	raw_battles = list(raw_battles)
+	random.shuffle(raw_battles)
+
+	while True:
+		run_battle_from_hashid(raw_battles.pop().seed, save_movie=True)
+
+def run_random_red_battles_forever():
+	# sample_batch = "W:/elo_world_output/crystal/batches/command_server/30ab01bb-581a-4dcf-89e3-92e2611e0b69.bin.gz"
+	sample_batch = "showdown_omega_batch_5.bin/42c4a84f-f70d-4e59-a822-9f3611c30421.bin"
+	battles = load_battle_batch(sample_batch)
+	raw_battles = list(battles.battles)
+	random.shuffle(raw_battles)
+
+	while True:
+		run_battle_from_hashid(raw_battles.pop().seed, save_movie=True)
 
 # trainer_wl = calc_wl(raw_battles)
 #
@@ -388,4 +444,5 @@ def load_data():
 # find_red_should_snore(raw_battles)
 
 if __name__ == '__main__':
+	# run_random_red_battles_forever()
 	main()

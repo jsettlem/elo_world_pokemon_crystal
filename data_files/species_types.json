@@ -1,0 +1,1006 @@
+{
+  "ABRA": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "AERODACTYL": [
+    "ROCK",
+    "FLYING"
+  ],
+  "AIPOM": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "ALAKAZAM": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "AMPHAROS": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "ARBOK": [
+    "POISON",
+    "POISON"
+  ],
+  "ARCANINE": [
+    "FIRE",
+    "FIRE"
+  ],
+  "ARIADOS": [
+    "BUG",
+    "POISON"
+  ],
+  "ARTICUNO": [
+    "ICE",
+    "FLYING"
+  ],
+  "AZUMARILL": [
+    "WATER",
+    "WATER"
+  ],
+  "BAYLEEF": [
+    "GRASS",
+    "GRASS"
+  ],
+  "BEEDRILL": [
+    "BUG",
+    "POISON"
+  ],
+  "BELLOSSOM": [
+    "GRASS",
+    "GRASS"
+  ],
+  "BELLSPROUT": [
+    "GRASS",
+    "POISON"
+  ],
+  "BLASTOISE": [
+    "WATER",
+    "WATER"
+  ],
+  "BLISSEY": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "BULBASAUR": [
+    "GRASS",
+    "POISON"
+  ],
+  "BUTTERFREE": [
+    "BUG",
+    "FLYING"
+  ],
+  "CATERPIE": [
+    "BUG",
+    "BUG"
+  ],
+  "CELEBI": [
+    "PSYCHIC_TYPE",
+    "GRASS"
+  ],
+  "CHANSEY": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "CHARIZARD": [
+    "FIRE",
+    "FLYING"
+  ],
+  "CHARMANDER": [
+    "FIRE",
+    "FIRE"
+  ],
+  "CHARMELEON": [
+    "FIRE",
+    "FIRE"
+  ],
+  "CHIKORITA": [
+    "GRASS",
+    "GRASS"
+  ],
+  "CHINCHOU": [
+    "WATER",
+    "ELECTRIC"
+  ],
+  "CLEFABLE": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "CLEFAIRY": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "CLEFFA": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "CLOYSTER": [
+    "WATER",
+    "ICE"
+  ],
+  "CORSOLA": [
+    "WATER",
+    "ROCK"
+  ],
+  "CROBAT": [
+    "POISON",
+    "FLYING"
+  ],
+  "CROCONAW": [
+    "WATER",
+    "WATER"
+  ],
+  "CUBONE": [
+    "GROUND",
+    "GROUND"
+  ],
+  "CYNDAQUIL": [
+    "FIRE",
+    "FIRE"
+  ],
+  "DELIBIRD": [
+    "ICE",
+    "FLYING"
+  ],
+  "DEWGONG": [
+    "WATER",
+    "ICE"
+  ],
+  "DIGLETT": [
+    "GROUND",
+    "GROUND"
+  ],
+  "DITTO": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "DODRIO": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "DODUO": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "DONPHAN": [
+    "GROUND",
+    "GROUND"
+  ],
+  "DRAGONAIR": [
+    "DRAGON",
+    "DRAGON"
+  ],
+  "DRAGONITE": [
+    "DRAGON",
+    "FLYING"
+  ],
+  "DRATINI": [
+    "DRAGON",
+    "DRAGON"
+  ],
+  "DROWZEE": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "DUGTRIO": [
+    "GROUND",
+    "GROUND"
+  ],
+  "DUNSPARCE": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "EEVEE": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "EKANS": [
+    "POISON",
+    "POISON"
+  ],
+  "ELECTABUZZ": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "ELECTRODE": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "ELEKID": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "ENTEI": [
+    "FIRE",
+    "FIRE"
+  ],
+  "ESPEON": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "EXEGGCUTE": [
+    "GRASS",
+    "PSYCHIC_TYPE"
+  ],
+  "EXEGGUTOR": [
+    "GRASS",
+    "PSYCHIC_TYPE"
+  ],
+  "FARFETCH_D": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "FEAROW": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "FERALIGATR": [
+    "WATER",
+    "WATER"
+  ],
+  "FLAAFFY": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "FLAREON": [
+    "FIRE",
+    "FIRE"
+  ],
+  "FORRETRESS": [
+    "BUG",
+    "STEEL"
+  ],
+  "FURRET": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "GASTLY": [
+    "GHOST",
+    "POISON"
+  ],
+  "GENGAR": [
+    "GHOST",
+    "POISON"
+  ],
+  "GEODUDE": [
+    "ROCK",
+    "GROUND"
+  ],
+  "GIRAFARIG": [
+    "NORMAL",
+    "PSYCHIC_TYPE"
+  ],
+  "GLIGAR": [
+    "GROUND",
+    "FLYING"
+  ],
+  "GLOOM": [
+    "GRASS",
+    "POISON"
+  ],
+  "GOLBAT": [
+    "POISON",
+    "FLYING"
+  ],
+  "GOLDEEN": [
+    "WATER",
+    "WATER"
+  ],
+  "GOLDUCK": [
+    "WATER",
+    "WATER"
+  ],
+  "GOLEM": [
+    "ROCK",
+    "GROUND"
+  ],
+  "GRANBULL": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "GRAVELER": [
+    "ROCK",
+    "GROUND"
+  ],
+  "GRIMER": [
+    "POISON",
+    "POISON"
+  ],
+  "GROWLITHE": [
+    "FIRE",
+    "FIRE"
+  ],
+  "GYARADOS": [
+    "WATER",
+    "FLYING"
+  ],
+  "HAUNTER": [
+    "GHOST",
+    "POISON"
+  ],
+  "HERACROSS": [
+    "BUG",
+    "FIGHTING"
+  ],
+  "HITMONCHAN": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "HITMONLEE": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "HITMONTOP": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "HOOTHOOT": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "HOPPIP": [
+    "GRASS",
+    "FLYING"
+  ],
+  "HORSEA": [
+    "WATER",
+    "WATER"
+  ],
+  "HOUNDOOM": [
+    "DARK",
+    "FIRE"
+  ],
+  "HOUNDOUR": [
+    "DARK",
+    "FIRE"
+  ],
+  "HO_OH": [
+    "FIRE",
+    "FLYING"
+  ],
+  "HYPNO": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "IGGLYBUFF": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "IVYSAUR": [
+    "GRASS",
+    "POISON"
+  ],
+  "JIGGLYPUFF": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "JOLTEON": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "JUMPLUFF": [
+    "GRASS",
+    "FLYING"
+  ],
+  "JYNX": [
+    "ICE",
+    "PSYCHIC_TYPE"
+  ],
+  "KABUTO": [
+    "ROCK",
+    "WATER"
+  ],
+  "KABUTOPS": [
+    "ROCK",
+    "WATER"
+  ],
+  "KADABRA": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "KAKUNA": [
+    "BUG",
+    "POISON"
+  ],
+  "KANGASKHAN": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "KINGDRA": [
+    "WATER",
+    "DRAGON"
+  ],
+  "KINGLER": [
+    "WATER",
+    "WATER"
+  ],
+  "KOFFING": [
+    "POISON",
+    "POISON"
+  ],
+  "KRABBY": [
+    "WATER",
+    "WATER"
+  ],
+  "LANTURN": [
+    "WATER",
+    "ELECTRIC"
+  ],
+  "LAPRAS": [
+    "WATER",
+    "ICE"
+  ],
+  "LARVITAR": [
+    "ROCK",
+    "GROUND"
+  ],
+  "LEDIAN": [
+    "BUG",
+    "FLYING"
+  ],
+  "LEDYBA": [
+    "BUG",
+    "FLYING"
+  ],
+  "LICKITUNG": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "LUGIA": [
+    "PSYCHIC_TYPE",
+    "FLYING"
+  ],
+  "MACHAMP": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "MACHOKE": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "MACHOP": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "MAGBY": [
+    "FIRE",
+    "FIRE"
+  ],
+  "MAGCARGO": [
+    "FIRE",
+    "ROCK"
+  ],
+  "MAGIKARP": [
+    "WATER",
+    "WATER"
+  ],
+  "MAGMAR": [
+    "FIRE",
+    "FIRE"
+  ],
+  "MAGNEMITE": [
+    "ELECTRIC",
+    "STEEL"
+  ],
+  "MAGNETON": [
+    "ELECTRIC",
+    "STEEL"
+  ],
+  "MANKEY": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "MANTINE": [
+    "WATER",
+    "FLYING"
+  ],
+  "MAREEP": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "MARILL": [
+    "WATER",
+    "WATER"
+  ],
+  "MAROWAK": [
+    "GROUND",
+    "GROUND"
+  ],
+  "MEGANIUM": [
+    "GRASS",
+    "GRASS"
+  ],
+  "MEOWTH": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "METAPOD": [
+    "BUG",
+    "BUG"
+  ],
+  "MEW": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "MEWTWO": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "MILTANK": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "MISDREAVUS": [
+    "GHOST",
+    "GHOST"
+  ],
+  "MOLTRES": [
+    "FIRE",
+    "FLYING"
+  ],
+  "MR__MIME": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "MUK": [
+    "POISON",
+    "POISON"
+  ],
+  "MURKROW": [
+    "DARK",
+    "FLYING"
+  ],
+  "NATU": [
+    "PSYCHIC_TYPE",
+    "FLYING"
+  ],
+  "NIDOKING": [
+    "POISON",
+    "GROUND"
+  ],
+  "NIDOQUEEN": [
+    "POISON",
+    "GROUND"
+  ],
+  "NIDORAN_F": [
+    "POISON",
+    "POISON"
+  ],
+  "NIDORAN_M": [
+    "POISON",
+    "POISON"
+  ],
+  "NIDORINA": [
+    "POISON",
+    "POISON"
+  ],
+  "NIDORINO": [
+    "POISON",
+    "POISON"
+  ],
+  "NINETALES": [
+    "FIRE",
+    "FIRE"
+  ],
+  "NOCTOWL": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "OCTILLERY": [
+    "WATER",
+    "WATER"
+  ],
+  "ODDISH": [
+    "GRASS",
+    "POISON"
+  ],
+  "OMANYTE": [
+    "ROCK",
+    "WATER"
+  ],
+  "OMASTAR": [
+    "ROCK",
+    "WATER"
+  ],
+  "ONIX": [
+    "ROCK",
+    "GROUND"
+  ],
+  "PARAS": [
+    "BUG",
+    "GRASS"
+  ],
+  "PARASECT": [
+    "BUG",
+    "GRASS"
+  ],
+  "PERSIAN": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "PHANPY": [
+    "GROUND",
+    "GROUND"
+  ],
+  "PICHU": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "PIDGEOT": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "PIDGEOTTO": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "PIDGEY": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "PIKACHU": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "PILOSWINE": [
+    "ICE",
+    "GROUND"
+  ],
+  "PINECO": [
+    "BUG",
+    "BUG"
+  ],
+  "PINSIR": [
+    "BUG",
+    "BUG"
+  ],
+  "POLITOED": [
+    "WATER",
+    "WATER"
+  ],
+  "POLIWAG": [
+    "WATER",
+    "WATER"
+  ],
+  "POLIWHIRL": [
+    "WATER",
+    "WATER"
+  ],
+  "POLIWRATH": [
+    "WATER",
+    "FIGHTING"
+  ],
+  "PONYTA": [
+    "FIRE",
+    "FIRE"
+  ],
+  "PORYGON": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "PORYGON2": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "PRIMEAPE": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "PSYDUCK": [
+    "WATER",
+    "WATER"
+  ],
+  "PUPITAR": [
+    "ROCK",
+    "GROUND"
+  ],
+  "QUAGSIRE": [
+    "WATER",
+    "GROUND"
+  ],
+  "QUILAVA": [
+    "FIRE",
+    "FIRE"
+  ],
+  "QWILFISH": [
+    "WATER",
+    "POISON"
+  ],
+  "RAICHU": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "RAIKOU": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "RAPIDASH": [
+    "FIRE",
+    "FIRE"
+  ],
+  "RATICATE": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "RATTATA": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "REMORAID": [
+    "WATER",
+    "WATER"
+  ],
+  "RHYDON": [
+    "GROUND",
+    "ROCK"
+  ],
+  "RHYHORN": [
+    "GROUND",
+    "ROCK"
+  ],
+  "SANDSHREW": [
+    "GROUND",
+    "GROUND"
+  ],
+  "SANDSLASH": [
+    "GROUND",
+    "GROUND"
+  ],
+  "SCIZOR": [
+    "BUG",
+    "STEEL"
+  ],
+  "SCYTHER": [
+    "BUG",
+    "FLYING"
+  ],
+  "SEADRA": [
+    "WATER",
+    "WATER"
+  ],
+  "SEAKING": [
+    "WATER",
+    "WATER"
+  ],
+  "SEEL": [
+    "WATER",
+    "WATER"
+  ],
+  "SENTRET": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "SHELLDER": [
+    "WATER",
+    "WATER"
+  ],
+  "SHUCKLE": [
+    "BUG",
+    "ROCK"
+  ],
+  "SKARMORY": [
+    "STEEL",
+    "FLYING"
+  ],
+  "SKIPLOOM": [
+    "GRASS",
+    "FLYING"
+  ],
+  "SLOWBRO": [
+    "WATER",
+    "PSYCHIC_TYPE"
+  ],
+  "SLOWKING": [
+    "WATER",
+    "PSYCHIC_TYPE"
+  ],
+  "SLOWPOKE": [
+    "WATER",
+    "PSYCHIC_TYPE"
+  ],
+  "SLUGMA": [
+    "FIRE",
+    "FIRE"
+  ],
+  "SMEARGLE": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "SMOOCHUM": [
+    "ICE",
+    "PSYCHIC_TYPE"
+  ],
+  "SNEASEL": [
+    "DARK",
+    "ICE"
+  ],
+  "SNORLAX": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "SNUBBULL": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "SPEAROW": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "SPINARAK": [
+    "BUG",
+    "POISON"
+  ],
+  "SQUIRTLE": [
+    "WATER",
+    "WATER"
+  ],
+  "STANTLER": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "STARMIE": [
+    "WATER",
+    "PSYCHIC_TYPE"
+  ],
+  "STARYU": [
+    "WATER",
+    "WATER"
+  ],
+  "STEELIX": [
+    "STEEL",
+    "GROUND"
+  ],
+  "SUDOWOODO": [
+    "ROCK",
+    "ROCK"
+  ],
+  "SUICUNE": [
+    "WATER",
+    "WATER"
+  ],
+  "SUNFLORA": [
+    "GRASS",
+    "GRASS"
+  ],
+  "SUNKERN": [
+    "GRASS",
+    "GRASS"
+  ],
+  "SWINUB": [
+    "ICE",
+    "GROUND"
+  ],
+  "TANGELA": [
+    "GRASS",
+    "GRASS"
+  ],
+  "TAUROS": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "TEDDIURSA": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "TENTACOOL": [
+    "WATER",
+    "POISON"
+  ],
+  "TENTACRUEL": [
+    "WATER",
+    "POISON"
+  ],
+  "TOGEPI": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "TOGETIC": [
+    "NORMAL",
+    "FLYING"
+  ],
+  "TOTODILE": [
+    "WATER",
+    "WATER"
+  ],
+  "TYPHLOSION": [
+    "FIRE",
+    "FIRE"
+  ],
+  "TYRANITAR": [
+    "ROCK",
+    "DARK"
+  ],
+  "TYROGUE": [
+    "FIGHTING",
+    "FIGHTING"
+  ],
+  "UMBREON": [
+    "DARK",
+    "DARK"
+  ],
+  "UNOWN": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "URSARING": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "VAPOREON": [
+    "WATER",
+    "WATER"
+  ],
+  "VENOMOTH": [
+    "BUG",
+    "POISON"
+  ],
+  "VENONAT": [
+    "BUG",
+    "POISON"
+  ],
+  "VENUSAUR": [
+    "GRASS",
+    "POISON"
+  ],
+  "VICTREEBEL": [
+    "GRASS",
+    "POISON"
+  ],
+  "VILEPLUME": [
+    "GRASS",
+    "POISON"
+  ],
+  "VOLTORB": [
+    "ELECTRIC",
+    "ELECTRIC"
+  ],
+  "VULPIX": [
+    "FIRE",
+    "FIRE"
+  ],
+  "WARTORTLE": [
+    "WATER",
+    "WATER"
+  ],
+  "WEEDLE": [
+    "BUG",
+    "POISON"
+  ],
+  "WEEPINBELL": [
+    "GRASS",
+    "POISON"
+  ],
+  "WEEZING": [
+    "POISON",
+    "POISON"
+  ],
+  "WIGGLYTUFF": [
+    "NORMAL",
+    "NORMAL"
+  ],
+  "WOBBUFFET": [
+    "PSYCHIC_TYPE",
+    "PSYCHIC_TYPE"
+  ],
+  "WOOPER": [
+    "WATER",
+    "GROUND"
+  ],
+  "XATU": [
+    "PSYCHIC_TYPE",
+    "FLYING"
+  ],
+  "YANMA": [
+    "BUG",
+    "FLYING"
+  ],
+  "ZAPDOS": [
+    "ELECTRIC",
+    "FLYING"
+  ],
+  "ZUBAT": [
+    "POISON",
+    "FLYING"
+  ]
+}

@@ -8,6 +8,7 @@ from protobuf.battle_pb2 import BattleSummary
 class Pokémon:
 	level: int
 	species: str
+	hasCustomMoves: bool = False
 	moves: Optional[List[str]] = None
 	held_item: Optional[str] = None
 
@@ -27,6 +28,7 @@ class Trainer:
 	items: List[str]
 
 	elo: int = 0
+	rank: int = 0
 	wins: int = 0
 	losses: int = 0
 	battles: List['Battle'] = field(default_factory=list)
@@ -35,8 +37,17 @@ class Trainer:
 
 	has_later_rematch: bool = False
 
+	tier: str = ""
+
+	continent: Optional[str] = None
+	area: Optional[str] = None
+	game_index: Optional[int] = None
+
+	is_unused: bool = False
+	is_rematch: bool = False
+
 	@property
-	def full_name(self):
+	def full_name(self) -> str:
 		return f"{self.class_name} {self.name}{'#' + str(self.rematch) if self.rematch > 1 or self.has_later_rematch else ''}"
 
 	@property
@@ -44,19 +55,19 @@ class Trainer:
 		return sum(p.level for p in self.pokémon) / len(self.pokémon)
 
 	@property
-	def pokemon_have_moves(self):
+	def pokemon_have_moves(self) -> bool:
 		return any(p.moves for p in self.pokémon)
 
 	@property
-	def pokemon_have_items(self):
+	def pokemon_have_items(self) -> bool:
 		return any(p.held_item for p in self.pokémon)
 
 	@property
-	def dv_total(self):
+	def dv_total(self) -> int:
 		return sum(self.dvs)
 
 	@property
-	def gender_symbol(self):
+	def gender_symbol(self) -> str:
 		return {
 			"MALE": "♂",
 			"FEMALE": "♀",
