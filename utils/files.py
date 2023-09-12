@@ -4,12 +4,15 @@ import uuid
 import zlib
 from typing import Iterable
 
+from pyboy import PyBoy
+
 from constants import memory
 from constants.file_paths import OUT_DIR
 from constants.memory import MemoryAddress
 from protobuf.battle_pb2 import BattleBatch
 from utils.besssave import BessSave
 from utils.data import reverse_characters
+from utils.pyboy_util import get_value
 
 
 def name_to_bytes(name: str, length: int = memory.NAME_LENGTH) -> Iterable[int]:
@@ -35,8 +38,8 @@ def load_save(file: str) -> bytearray:
 	return save
 
 
-def get_current_pokemon_index(battle_save: BessSave):
-	current_pokemon_index = battle_save.get_value(memory.wPartyMenuCursor)[0]
+def get_current_pokemon_index(primary_emulator: PyBoy):
+	current_pokemon_index = get_value(primary_emulator, memory.wPartyMenuCursor)[0]
 	# wPartyMenu cursor starts unpopulated (0), but is 1-indexed
 	current_pokemon_index = max(current_pokemon_index, 1) - 1
 	return current_pokemon_index

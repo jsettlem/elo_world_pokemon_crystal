@@ -79,6 +79,7 @@ playerNameEnd = MemoryAddress(0xd48d + PLAYER_NAME_LENGTH - 1, 1)
 
 wPlayerGender = MemoryAddress("wPlayerGender", 1)
 wTextboxFrame = MemoryAddress("wTextboxFrame", 1)
+wTextboxFlags = MemoryAddress("wTextboxFlags", 1)
 
 wOTParty = MemoryAddress("wOTPartyCount", 0x1ac)
 wOTPartyCount = MemoryAddress("wOTPartyCount", 1)
@@ -177,6 +178,7 @@ wEnemySwitchMonIndex = MemoryAddress("wEnemySwitchMonIndex", 1)
 
 wBattleWeather = MemoryAddress("wBattleWeather", 1)
 
+# TODO use sym map here
 breakpoints = {
 	"SetUpBattlePartyMenu": 0x52f7,
 	"AI_Switch": 0x446c,

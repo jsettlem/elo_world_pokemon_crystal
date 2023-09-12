@@ -16,7 +16,7 @@ from utils.demos import *
 from utils.files import *
 from utils.hashids import encode_battle, decode_battle
 from utils.movies import build_movie, MovieContext
-from utils.pyboy_util import set_value, run_until_breakpoint, copy_values, get_value
+from utils.pyboy_util import set_value, run_until_breakpoint, copy_values, get_value, randomize_rdiv
 
 
 def load_trainer_info(trainer_class: int, trainer_id: int, emulator: PyBoy, save: bytes):
@@ -57,7 +57,7 @@ def set_up_battle_emulator(base_save: bytearray, primary_emulator: PyBoy, work_e
 	set_value(primary_emulator, [enemy_class], memory.wTrainerClass)
 	set_value(primary_emulator, [enemy_index], memory.wOtherTrainerID)
 
-	# battle_save.randomize_rdiv(rng) # TODO
+	randomize_rdiv(primary_emulator, rng)
 
 	# randomize textbox frame
 	set_value(primary_emulator, [rng.randint(0, 8)], memory.wTextboxFrame)
@@ -67,32 +67,35 @@ def set_up_battle_emulator(base_save: bytearray, primary_emulator: PyBoy, work_e
 	set_value(primary_emulator, [item_id, 0x1, 0xff], memory.wItems)
 
 
-def get_ai_action(battle_save: BessSave, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int],
-                  rng: random.Random, current_player_items: bytearray = None) -> BessSave:
+def get_ai_action(primary_emulator: PyBoy, base_save: str, working_emulator: PyBoy, trainer: Tuple[int, int],
+                  rng: random.Random, current_player_items: bytearray = None):
 	ai_save = load_save(base_save)
-	swap_pairings(battle_save, ai_save)
+	working_emulator.load_state(BytesIO(ai_save))
+	swap_pairings(primary_emulator, working_emulator)
 
-	ai_save.set_value([trainer[0]], memory.wOtherTrainerClass)
-	ai_save.set_value([trainer[0]], memory.wTrainerClass)
-	ai_save.set_value([trainer[1]], memory.wOtherTrainerID)
+	set_value(working_emulator, [0b1], memory.wTextboxFlags)
+
+	set_value(working_emulator, [trainer[0]], memory.wOtherTrainerClass)
+	set_value(working_emulator, [trainer[0]], memory.wTrainerClass)
+	set_value(working_emulator, [trainer[1]], memory.wOtherTrainerID)
 
 	# Edge case -- the AI gets confused if the player mon has no HP
-	if battle_save.get_value(memory.wEnemyMonHP) == b"\x00\x00":
+	if get_value(primary_emulator, memory.wEnemyMonHP) == b"\x00\x00":
 		print("It's zero!")
-		ai_save.set_value([0x0, 0x1], memory.wBattleMonHP)
+		set_value(working_emulator, [0x0, 0x1], memory.wBattleMonHP)
 
-	ai_save.randomize_rdiv(rng)
+	randomize_rdiv(working_emulator, rng)
 
 	if current_player_items is not None:
-		ai_save.set_value(current_player_items, memory.wEnemyTrainerItems)
+		set_value(working_emulator, current_player_items, memory.wEnemyTrainerItems)
 
-	ai_save.set_value(get_enemy_used_moves(battle_save), memory.wPlayerUsedMoves)
+	set_value(working_emulator, get_enemy_used_moves(primary_emulator), memory.wPlayerUsedMoves)
 
-	battle_save.copy_values(memory.wBattleWeather, ai_save, memory.wBattleWeather)
+	copy_values(primary_emulator, memory.wBattleWeather, working_emulator, memory.wBattleWeather)
 
 	# This is to work around a bug in the actual game that normally never triggers
 	# See https://twitter.com/pimanrules/status/1528137472680640513
-	ai_save.set_value([0x0], memory.wEnemyTrainerBaseReward)
+	set_value(working_emulator, [0x0], memory.wEnemyTrainerBaseReward)
 
 	# TODO: we may need to update more values here. Check the disassembly.
 
@@ -100,38 +103,30 @@ def get_ai_action(battle_save: BessSave, base_save: str, working_save: str, out_
 	# set_value(ai_save, wEnemySubStatus1[0], [0x10], 1)
 	# set_value(ai_save, wEnemyPerishCount[0], [0x1], 1)
 
-	write_file(working_save, ai_save)
-
-	# Open the AI state, wait for the results
-	call_bgb(in_save=working_save, out_save=out_save, breakpoint_list=[
-		# for switching:
-		'LoadEnemyMon',
-		# for move selection:
-		'PlayerTurn_EndOpponentProtectEndureDestinyBond', 'EnemyTurn_EndOpponentProtectEndureDestinyBond',
-		'AI_Switch',
-		'EnemyUsedFullHeal', 'EnemyUsedMaxPotion', 'EnemyUsedFullRestore', 'EnemyUsedPotion', 'EnemyUsedSuperPotion',
-		'EnemyUsedHyperPotion', 'EnemyUsedXAccuracy', 'EnemyUsedGuardSpec', 'EnemyUsedDireHit', 'EnemyUsedXAttack',
-		'EnemyUsedXDefend', 'EnemyUsedXSpeed', 'EnemyUsedXSpecial',
-	], demo=files.AI_DEMO,
-	         # hf=False, timeout=10000
-	         )
-
-	# Parse AI actions
-	ai_output = load_save(out_save)
-	return ai_output
+	run_until_breakpoint(working_emulator,
+		 breakpoints=[
+			 # for switching:
+			 'LoadEnemyMon',
+			 # for move selection:
+			 'PlayerTurn_EndOpponentProtectEndureDestinyBond', 'EnemyTurn_EndOpponentProtectEndureDestinyBond',
+			 'AI_Switch',
+			 'EnemyUsedFullHeal', 'EnemyUsedMaxPotion', 'EnemyUsedFullRestore', 'EnemyUsedPotion', 'EnemyUsedSuperPotion',
+			 'EnemyUsedHyperPotion', 'EnemyUsedXAccuracy', 'EnemyUsedGuardSpec', 'EnemyUsedDireHit', 'EnemyUsedXAttack',
+			 'EnemyUsedXDefend', 'EnemyUsedXSpeed', 'EnemyUsedXSpecial',
+		 ], demo=generate_ai_demo())
 
 
-def swap_pairings(source_save, target_save):
+def swap_pairings(source_emulator: PyBoy, target_emulator: PyBoy):
 	# Copy data from battle save to ai save, swapping the player and enemy data
 
 	for pairing in memory.player_enemy_pairs:
 		player_address, enemy_address = pairing
 
-		source_save.copy_values(player_address, target_save, enemy_address)
-		source_save.copy_values(enemy_address, target_save, player_address)
+		copy_values(source_emulator, player_address, target_emulator, enemy_address)
+		copy_values(source_emulator, enemy_address, target_emulator, player_address)
 
 
-def get_enemy_used_moves(input_save: BessSave) -> bytearray:
+def get_enemy_used_moves(primary_emulator: PyBoy)  -> bytearray:
 	# wPlayerUsed moves keeps track of the moves the enemy has seen the player use.
 	# There's no equivalent for the enemy's moves, so this is a bit of a hack, looking for moves that aren't at full PP.
 	# There are some edge cases where this fails, but they're relatively rare and this isn't used much anyway:
@@ -144,8 +139,8 @@ def get_enemy_used_moves(input_save: BessSave) -> bytearray:
 	# - If the enemy has used a PP Up
 	# - If the enemy uses Sketch (no enemies have Smeargle)
 	used_move_list = bytearray([0, 0, 0, 0])
-	enemy_moves = input_save.get_value(memory.wEnemyMonMoves)
-	enemy_pp = input_save.get_value(memory.wEnemyMonPP)
+	enemy_moves = get_value(primary_emulator, memory.wEnemyMonMoves)
+	enemy_pp = get_value(primary_emulator, memory.wEnemyMonPP)
 	for i, move in enumerate(enemy_moves):
 		if move != 0:
 			expected_pp = moves[move]["pp"]
@@ -154,19 +149,19 @@ def get_enemy_used_moves(input_save: BessSave) -> bytearray:
 	return used_move_list
 
 
-def get_battle_mons(battle_save: BessSave) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
+def get_battle_mons(battle_save: PyBoy) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
 	return (
 		(
-			battle_save.get_value(memory.wBattleMonSpecies)[0],
-			get_stat(battle_save.get_value(memory.wBattleMonHP)),
-			get_stat(battle_save.get_value(memory.wBattleMonMaxHP)),
-			battle_save.get_value(memory.wCurPartyMon)[0]
+			get_value(battle_save, memory.wBattleMonSpecies)[0],
+			get_stat(get_value(battle_save, memory.wBattleMonHP)),
+			get_stat(get_value(battle_save, memory.wBattleMonMaxHP)),
+			get_value(battle_save, memory.wCurPartyMon)[0]
 		),
 		(
-			battle_save.get_value(memory.wEnemyMonSpecies)[0],
-			get_stat(battle_save.get_value(memory.wEnemyMonHP)),
-			get_stat(battle_save.get_value(memory.wEnemyMonMaxHP)),
-			battle_save.get_value(memory.wCurOTMon)[0]
+			get_value(battle_save, memory.wEnemyMonSpecies)[0],
+			get_stat(get_value(battle_save, memory.wEnemyMonHP)),
+			get_stat(get_value(battle_save, memory.wEnemyMonMaxHP)),
+			get_value(battle_save, memory.wCurOTMon)[0]
 		)
 	)
 
@@ -186,13 +181,8 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	                             movie_working_dir=movie_working_dir,
 	                             movie_output_dir=output_dir) if save_movie else None
 
-	for directory in [working_dir, movie_working_dir]:
-		os.makedirs(directory, exist_ok=True)
-
-	# If the enemy trainer is Cal2, the game will try to load a mystery gift trainer
-	# This patch disables that behavior, so we can see cal's programmed but unused team
-	# TODO
-	# shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
+	# for directory in [working_dir, movie_working_dir]:
+	# 	os.makedirs(directory, exist_ok=True)
 
 	player_class = player_trainer['class']
 	player_index = player_trainer['instance']
@@ -207,8 +197,10 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	base_ai_save = load_save(files.BASE_AI_SAVE)
 	base_switch_save = load_save(files.BASE_SWITCH_SAVE)
 
-	work_emulator = get_pyboy_instance()
-	primary_emulator = get_pyboy_instance(headless=False)
+	work_emulator = get_pyboy_instance(headless=True)
+	# work_emulator = get_pyboy_instance(headless=False)
+	primary_emulator = get_pyboy_instance(headless=True)
+	# primary_emulator = get_pyboy_instance(headless=False)
 
 	# Load the data for the player trainer
 	load_trainer_info(player_class, player_index, work_emulator, base_save)
@@ -225,6 +217,8 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 
 	turn_count = 0
 
+	button_sequence = generate_demo([])
+
 	while True:
 		# Play until we reach a menu or win/lose
 		# total_clocks = battle_save.get_total_clocks()
@@ -234,29 +228,11 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 			"SetUpBattlePartyMenu",
 			"WinTrainerBattle",
 			"LostBattle",
-		], demo=generate_demo([]))
+		], demo=button_sequence)
 
-		"""
-		
-		
-		call_bgb(in_save=battle_save_path, out_save=battle_save_path, breakpoint_list=[
-			f'BattleMenu/{breakpoint_condition}',
-			f'SetUpBattlePartyMenu/{breakpoint_condition}',
-			f'WinTrainerBattle/{breakpoint_condition}',
-			f'LostBattle/{breakpoint_condition},',
-		], demo=out_demo_path, movie_context=movie_context)
+		player_battle_mon, enemy_battle_mon = get_battle_mons(primary_emulator)
 
-		if turn_count == 0:
-			# after both trainers are loaded, we should swap out the Cal patch for the exp cheat
-			# The "patch" is really just a cheat, so I dunno if it will play nicely with rom banks
-			# I'm too lazy to figure that out, so we can just turn it off
-			shutil.copyfile(files.EXP_CHEAT, f"{save_working_dir}/{files.CHEAT_NAME}")
-
-		battle_save = load_save(battle_save_path)
-
-		player_battle_mon, enemy_battle_mon = get_battle_mons(battle_save)
-
-		pc = battle_save.get_program_counter()
+		pc = primary_emulator.mb.cpu.PC
 
 		# Which breakpoint did we hit?
 		if pc == memory.breakpoints["WinTrainerBattle"]:
@@ -270,86 +246,85 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 		elif pc == memory.breakpoints["SetUpBattlePartyMenu"]:
 			# AI is forced to switch out, what should we switch to?
 
-			ai_output = get_ai_action(battle_save=battle_save,
+			get_ai_action(primary_emulator=primary_emulator,
 			                          base_save=files.BASE_SWITCH_SAVE,
-			                          working_save=ai_input_save_path,
-			                          out_save=ai_output_save_path,
+			                          working_emulator=work_emulator,
 			                          trainer=(player_class, player_index),
 			                          rng=rng)
 
-			target_pokemon = ai_output.get_value(memory.wCurPartyMon)[0]  # should this be wCurBattleMon? probably...
-			current_pokemon_index = get_current_pokemon_index(battle_save)
+			target_pokemon = get_value(work_emulator, memory.wCurPartyMon)[0]  # should this be wCurBattleMon? probably...
+			current_pokemon_index = get_current_pokemon_index(primary_emulator)
 
 			button_sequence = choose_pokemon(current_pokemon_index, target_pokemon)
 			add_turn(battle_log, "FORCE_SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
 		else:
 			# We're at the battle menu, what should we choose?
 
-			ai_output = get_ai_action(battle_save=battle_save,
+			get_ai_action(primary_emulator=primary_emulator,
 			                          base_save=files.BASE_AI_SAVE,
-			                          working_save=ai_input_save_path,
-			                          out_save=ai_output_save_path,
+									  working_emulator=work_emulator,
 			                          trainer=(player_class, player_index),
 			                          current_player_items=current_player_items,
 			                          rng=rng)
 
-			ai_pc = ai_output.get_program_counter()
+			ai_pc = work_emulator.mb.cpu.PC
 			if ai_pc in memory.items.keys():
-				battle_save.set_value([0x1], memory.wNumItems)
+				set_value(primary_emulator, [0x1], memory.wNumItems)
 				item_id = memory.items[ai_pc]
-				battle_save.set_value([item_id, 0x1, 0xff], memory.wItems)
+				set_value(primary_emulator, [item_id, 0x1, 0xff], memory.wItems)
 
-				target_pokemon = battle_save.get_value(memory.wCurBattleMon)[0]
-				current_pokemon_index = get_current_pokemon_index(battle_save)
+				target_pokemon = get_value(primary_emulator, memory.wCurBattleMon)[0]
+				current_pokemon_index = get_current_pokemon_index(primary_emulator)
 
 				button_sequence = select_item(current_pokemon_index, target_pokemon)
-
-				write_file(battle_save_path, battle_save)
 
 				current_player_items[current_player_items.index(item_id)] = 0x0
 
 				add_turn(battle_log, "ITEM", item_id, player_battle_mon, enemy_battle_mon)
 
 			elif ai_pc == memory.breakpoints["AI_Switch"]:
-				target_pokemon = ai_output.get_value(memory.wEnemySwitchMonIndex)[0] - 1
-				current_pokemon_index = get_current_pokemon_index(battle_save)
+				target_pokemon = get_value(work_emulator, memory.wEnemySwitchMonIndex)[0] - 1
+				current_pokemon_index = get_current_pokemon_index(primary_emulator)
 
 				button_sequence = select_switch() + choose_pokemon(current_pokemon_index, target_pokemon)
 
 				add_turn(battle_log, "SWITCH", target_pokemon, player_battle_mon, enemy_battle_mon)
 
 			else:
-				selected_move_index = ai_output.get_value(memory.wCurEnemyMoveNum)[0]
-				current_move_index = battle_save.get_value(memory.wCurMoveNum)[0]
+				selected_move_index = get_value(work_emulator, memory.wCurEnemyMoveNum)[0]
+				current_move_index = get_value(primary_emulator, memory.wCurMoveNum)[0]
 
 				button_sequence = select_move(current_move_index, selected_move_index)
 
 				# TODO: how does struggle work?
-				player_moves = battle_save.get_value(memory.wBattleMonMoves)
+				player_moves = get_value(primary_emulator, memory.wBattleMonMoves)
 
 				add_turn(battle_log, "MOVE", player_moves[selected_move_index], player_battle_mon, enemy_battle_mon)
 
-		write_file(out_demo_path, button_sequence)
 		turn_count += 1
 
 	if save_movie:
 		os.makedirs(output_dir, exist_ok=True)
 		build_movie(movie_context)
 
-	for created_dir in [movie_working_dir, save_working_dir, demo_working_dir]:
-		shutil.rmtree(created_dir)
-	os.rmdir(working_dir)
+	# for created_dir in [movie_working_dir]:
+	# 	shutil.rmtree(created_dir)
+	# os.rmdir(working_dir)
+
+	work_emulator.stop(save=False)
+	primary_emulator.stop(save=False)
 
 	return battle_log
-	"""
+
 
 
 def get_pyboy_instance(headless=True):
 	if headless:
 		emulator = PyBoy(
 			files.ROM_IMAGE,
-			window_type="headless",
+			window_type="dummy",
 			randomize=False,
+			disable_renderer=True,
 		)
 	else:
 		emulator = PyBoy(
@@ -357,8 +332,7 @@ def get_pyboy_instance(headless=True):
 			randomize=False,
 			sound=True,
 		)
-
-	emulator.set_emulation_speed(0)
+		emulator.set_emulation_speed(0)
 
 	return emulator
 
@@ -459,10 +433,12 @@ if __name__ == '__main__':
 	# trainer_Bruno = get_player_by_class_id(13, 1)
 	# trainer_Red = get_player_by_class_id(63, 1)
 	#
+	trainer_Cal1 = get_player_by_class_id(12, 1)
 	trainer_Cal2 = get_player_by_class_id(12, 2)
 	#
 	# logs = []
 	#
+	# run_battle_with_trainers(trainer_Cal1, trainer_Cal1, random.Random("sweet_16_1"), save_movie=False)
 	# run_battle_with_trainers(trainer_Cal2, trainer_Misty, random.Random("sweet_16_1"), save_movie=False)
 
 	# logs.append(run_battle_with_trainers(trainer_Blue, trainer_Surge, random.Random("sweet_16_1"), save_movie=True))
@@ -502,9 +478,14 @@ if __name__ == '__main__':
 	#baton pass battles
 	# run_battle_from_hashid("en153y37", save_movie=True)
 	# run_battle_with_trainers(get_player_by_class_id(34, 2), get_player_by_class_id(59, 8), random.Random("baton-pass-battles"), save_movie=True)
+	# for i in range(100):
+	# 	print("Running battle!", i)
+	# 	run_random_battle(save_movie=False)
 	run_random_battle(save_movie=False)
-
-	# run_battle_from_hashid("7!3y3dow", save_movie=False)
+	#
+	# run_battle_from_hashid("e32d xd0-", save_movie=False)
+	# run_battle_from_hashid("r1yj zw!g", save_movie=False)
+	# run_battle_from_hashid("7w13 9w21", save_movie=False) #weirdly long battle
 
 # run_random_battle(save_movie=False)
 # test_battles_with_all_trainers()

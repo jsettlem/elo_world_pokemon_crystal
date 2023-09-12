@@ -1,3 +1,4 @@
+from random import Random
 from typing import Iterable, List
 
 from pyboy import PyBoy
@@ -20,6 +21,11 @@ def set_value(emulator: PyBoy, source: Iterable[int], address: "MemoryAddress") 
 def copy_values(source: PyBoy, source_address: "MemoryAddress", target: PyBoy, target_address: "MemoryAddress") -> None:
     assert source_address.size == target_address.size
     set_value(target, get_value(source, source_address), target_address)
+
+
+def randomize_rdiv(emulator: PyBoy, rng: "Random"):
+    random_clock = [rng.randint(0, 255) for _ in range(4)]
+    emulator.mb.timer.dividers = random_clock
 
 
 def byte_to_pyboy_input(button: int) -> WindowEvent:
@@ -59,16 +65,20 @@ def byte_to_pyboy_release(last_button):
 
 
 
-def run_until_breakpoint(emulator: PyBoy, breakpoints: List[str], demo: bytearray = bytearray()):
+def run_until_breakpoint(emulator: PyBoy, breakpoints: List[str], demo: bytearray = bytearray(), ):
     emulator.mb.breakpoints_list = []
     for bp in breakpoints:
         emulator.mb.add_breakpoint(*reverse_symbols[bp])
 
+    emulator.override_memory_value(rom_bank=0x0e, addr=0x5791 - 0x4000, value=0x0) # fix cal
+
     frame = 0
     while not emulator.tick() and frame < frame_limit:
+        emulator.set_memory_value(addr=0xc664, value=0x0) # disable exp gain
+
         frame += 1
         if frame < len(demo):
-            if frame > 0:
+            if frame > 0 and demo[frame - 1] != demo[frame]:
                 emulator.send_input(byte_to_pyboy_release(demo[frame - 1]))
             emulator.send_input(byte_to_pyboy_input(demo[frame]))
 

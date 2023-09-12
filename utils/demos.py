@@ -11,7 +11,7 @@ def make_button_sequence(buttons: Iterable[int]) -> Iterable[int]:
 	buffer_size = 12
 	return [
 		half_press
-		for full_press in zip(zero, buttons, *([zero] * buffer_size))
+		for full_press in zip(zero, buttons, buttons, *([zero] * buffer_size))
 		for half_press in full_press
 	]
 
@@ -87,6 +87,6 @@ def select_switch(buffer_size=1) -> bytearray:
 
 def generate_ai_demo() -> bytearray:
 	return generate_demo([buttons.B_BUTTON, buttons.B_BUTTON, buttons.B_BUTTON, buttons.B_BUTTON, buttons.A_BUTTON, buttons.A_BUTTON,
-							 buttons.B_BUTTON, buttons.B_BUTTON, buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON,
-							 buttons.B_BUTTON, buttons.B_BUTTON, buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON,
-							 buttons.B_BUTTON, buttons.B_BUTTON, buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON])
+						  *([buttons.B_BUTTON]*10), buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON,
+						   *([buttons.B_BUTTON]*10), buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON,
+							*([buttons.B_BUTTON]*10), buttons.A_BUTTON, buttons.DOWN_BUTTON, buttons.A_BUTTON])
