@@ -13,9 +13,9 @@ ROM_IMAGE = f"{BASE_DIR}/{ROM_NAME}"
 MEMORY_MAP = f"{BASE_DIR}/{MEMORY_MAP_NAME}"
 EXP_CHEAT = f"{BASE_DIR}/disable_exp.cht"
 CAL_PATCH = f"{BASE_DIR}/fix_cal.cht"
-BASE_SAVE = f"{BASE_DIR}/base_state_1.sna"
-BASE_AI_SAVE = f"{BASE_DIR}/base_ai_state.sna"
-BASE_SWITCH_SAVE = f"{BASE_DIR}/ai_switch_base.sna"
+BASE_SAVE = f"{BASE_DIR}/base_state_1_py.save"
+BASE_AI_SAVE = f"{BASE_DIR}/base_ai_state_py.save"
+BASE_SWITCH_SAVE = f"{BASE_DIR}/ai_switch_base_py.save"
 AI_DEMO = f"{BASE_DIR}/ai_demo.dem"
 
 # dynamic files

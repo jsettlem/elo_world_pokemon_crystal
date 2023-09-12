@@ -28,10 +28,11 @@ def write_file(file: str, save: BessSave | bytearray) -> None:
 			f.write(save)
 
 
-def load_save(file: str) -> BessSave:
+def load_save(file: str) -> bytearray:
 	with open(file, 'rb') as f:
 		save = bytearray(f.read())
-	return BessSave(save)
+
+	return save
 
 
 def get_current_pokemon_index(battle_save: BessSave):

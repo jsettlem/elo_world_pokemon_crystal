@@ -2,6 +2,9 @@ import os
 import random
 import shutil
 import string
+from io import BytesIO
+
+from pyboy import PyBoy
 
 import constants.file_paths as files
 from constants.memory import wEnemyTrainerItems
@@ -13,56 +16,55 @@ from utils.demos import *
 from utils.files import *
 from utils.hashids import encode_battle, decode_battle
 from utils.movies import build_movie, MovieContext
+from utils.pyboy_util import set_value, run_until_breakpoint, copy_values, get_value
 
 
-def load_trainer_info(trainer_class: int, trainer_id: int, in_save: BessSave, working_save: str) -> BessSave:
-	save = in_save.copy()
-	save.set_value([trainer_class], memory.wOtherTrainerClass)
-	save.set_value([trainer_id], memory.wOtherTrainerID)
-	write_file(working_save, save)
+def load_trainer_info(trainer_class: int, trainer_id: int, emulator: PyBoy, save: bytes):
 
-	call_bgb(in_save=working_save,
-	         out_save=working_save,
-	         breakpoint_list=['PlaceCommandCharacter'])
+	emulator.load_state(BytesIO(save))
 
-	return load_save(working_save)
+	set_value(emulator, [trainer_class], memory.wOtherTrainerClass)
+	set_value(emulator, [trainer_id], memory.wOtherTrainerID)
+
+	run_until_breakpoint(emulator, ['PlaceCommandCharacter'])
 
 
-def set_up_battle_save(base_save: BessSave, player_trainer_info: BessSave, enemy_class: int,
-                       enemy_index: int, player_gender: str, rng: random.Random) -> BessSave:
-	battle_save = base_save.copy()
+def set_up_battle_emulator(base_save: bytearray, primary_emulator: PyBoy, work_emulator: PyBoy, enemy_class: int,
+						   enemy_index: int, player_gender: str, rng: random.Random):
+	# work_emulator contains the loaded player trainer data
+	# primary_emulator should be initialized to the start of the battle
 
-	player_trainer_info.copy_values(memory.wOTParty, battle_save, memory.wPlayerParty)
+	primary_emulator.load_state(BytesIO(base_save))
 
-	enemy_party_size = player_trainer_info.get_value(memory.wOTPartyCount)[0]
+	copy_values(work_emulator, memory.wOTParty, primary_emulator, memory.wPlayerParty)
+
+	enemy_party_size = get_value(work_emulator, memory.wOTPartyCount)[0]
 
 	for i in range(enemy_party_size):
-		pokemon = player_trainer_info.get_value(memory.enemyParty[i])
+		pokemon = get_value(work_emulator, memory.enemyParty[i])
 		pokemon_index = pokemon[0] - 1
 		pokemon_name = name_to_bytes(pokemon_names[str(pokemon_index)])
-		battle_save.set_value(pokemon_name, memory.playerPartyNicks[i])
-		player_trainer_info.copy_values(memory.wStringBuffer1, battle_save, memory.playerPartyOTs[i])
+		set_value(primary_emulator, pokemon_name, memory.playerPartyNicks[i])
+		copy_values(work_emulator, memory.wStringBuffer1, primary_emulator, memory.playerPartyOTs[i])
 
-	player_trainer_info.copy_values(memory.wStringBuffer1, battle_save, memory.wPlayerName)
-	battle_save.set_value([memory.NAME_TERMINATOR], memory.playerNameEnd)
+	copy_values(work_emulator, memory.wStringBuffer1, primary_emulator, memory.wPlayerName)
+	set_value(primary_emulator, [memory.NAME_TERMINATOR], memory.playerNameEnd)
 
 	if player_gender == "FEMALE" or (player_gender == "ENBY" and rng.random() > 0.5):
-		battle_save.set_value([0x1], memory.wPlayerGender)
+		set_value(primary_emulator, [0x1], memory.wPlayerGender)
 
-	battle_save.set_value([enemy_class], memory.wOtherTrainerClass)
-	battle_save.set_value([enemy_class], memory.wTrainerClass)
-	battle_save.set_value([enemy_index], memory.wOtherTrainerID)
+	set_value(primary_emulator, [enemy_class], memory.wOtherTrainerClass)
+	set_value(primary_emulator, [enemy_class], memory.wTrainerClass)
+	set_value(primary_emulator, [enemy_index], memory.wOtherTrainerID)
 
-	battle_save.randomize_rdiv(rng)
+	# battle_save.randomize_rdiv(rng) # TODO
 
 	# randomize textbox frame
-	battle_save.set_value([rng.randint(0, 8)], memory.wTextboxFrame)
+	set_value(primary_emulator, [rng.randint(0, 8)], memory.wTextboxFrame)
 
-	battle_save.set_value([0x1], memory.wNumItems)
+	set_value(primary_emulator, [0x1], memory.wNumItems)
 	item_id = memory.itemXAttack
-	battle_save.set_value([item_id, 0x1, 0xff], memory.wItems)
-
-	return battle_save
+	set_value(primary_emulator, [item_id, 0x1, 0xff], memory.wItems)
 
 
 def get_ai_action(battle_save: BessSave, base_save: str, working_save: str, out_save: str, trainer: Tuple[int, int],
@@ -179,28 +181,18 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	working_dir = os.path.abspath(f"{files.SCRATCH_DIR}/{run_identifier}")
 	output_dir = os.path.abspath(f"{files.OUT_DIR}/{run_identifier}")
 	movie_working_dir = f"{working_dir}/movie_{directory_nonce}"
-	save_working_dir = f"{working_dir}/saves_{directory_nonce}"
-	demo_working_dir = f"{working_dir}/demo_{directory_nonce}"
 	movie_context = MovieContext(movie_name=str(run_identifier),
 	                             movie_index=0,
 	                             movie_working_dir=movie_working_dir,
 	                             movie_output_dir=output_dir) if save_movie else None
 
-	for directory in [working_dir, save_working_dir, demo_working_dir, movie_working_dir]:
+	for directory in [working_dir, movie_working_dir]:
 		os.makedirs(directory, exist_ok=True)
-
-	out_save_path = f"{save_working_dir}/{files.OUT_SAVE}"
-	ai_input_save_path = f"{save_working_dir}/{files.AI_INPUT_SAVE}"
-	ai_output_save_path = f"{save_working_dir}/{files.AI_OUTPUT_SAVE}"
-	battle_save_path = f"{save_working_dir}/{files.BATTLE_SAVE}"
-	out_demo_path = f"{demo_working_dir}/{files.OUT_DEMO}"
-
-	shutil.copyfile(files.ROM_IMAGE, f"{save_working_dir}/{files.ROM_NAME}")
-	shutil.copyfile(files.MEMORY_MAP, f"{save_working_dir}/{files.MEMORY_MAP_NAME}")
 
 	# If the enemy trainer is Cal2, the game will try to load a mystery gift trainer
 	# This patch disables that behavior, so we can see cal's programmed but unused team
-	shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
+	# TODO
+	# shutil.copyfile(files.CAL_PATCH, f"{save_working_dir}/{files.CHEAT_NAME}")
 
 	player_class = player_trainer['class']
 	player_index = player_trainer['instance']
@@ -211,28 +203,42 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	                              player=(player_class, player_index),
 	                              enemy=(enemy_class, enemy_index))
 
-	# Load the data for the player trainer
 	base_save = load_save(files.BASE_SAVE)
+	base_ai_save = load_save(files.BASE_AI_SAVE)
+	base_switch_save = load_save(files.BASE_SWITCH_SAVE)
 
-	player_trainer_info = load_trainer_info(player_class, player_index, base_save, out_save_path)
+	work_emulator = get_pyboy_instance()
+	primary_emulator = get_pyboy_instance(headless=False)
+
+	# Load the data for the player trainer
+	load_trainer_info(player_class, player_index, work_emulator, base_save)
 
 	# return fetch_trainer_party_moves(player_trainer_info)
 
 	# Set up the initial battle state
-	battle_save = set_up_battle_save(base_save, player_trainer_info, enemy_class, enemy_index, player_trainer["gender"],
-	                                 rng)
+	set_up_battle_emulator(base_save, primary_emulator, work_emulator, enemy_class, enemy_index, player_trainer["gender"], rng)
 
-	current_player_items = player_trainer_info.get_value(wEnemyTrainerItems)
+	current_player_items = get_value(work_emulator, wEnemyTrainerItems)
 
-	write_file(battle_save_path, battle_save)
-	write_file(out_demo_path, generate_demo([]))
+	# write_file(battle_save_path, battle_save)
+	# write_file(out_demo_path, generate_demo([]))
 
 	turn_count = 0
 
 	while True:
 		# Play until we reach a menu or win/lose
-		total_clocks = battle_save.get_total_clocks()
-		breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
+		# total_clocks = battle_save.get_total_clocks()
+		# breakpoint_condition = f"TOTALCLKS!=${total_clocks:x}"
+		run_until_breakpoint(primary_emulator, breakpoints=[
+			"BattleMenu",
+			"SetUpBattlePartyMenu",
+			"WinTrainerBattle",
+			"LostBattle",
+		], demo=generate_demo([]))
+
+		"""
+		
+		
 		call_bgb(in_save=battle_save_path, out_save=battle_save_path, breakpoint_list=[
 			f'BattleMenu/{breakpoint_condition}',
 			f'SetUpBattlePartyMenu/{breakpoint_condition}',
@@ -335,6 +341,26 @@ def run_one_battle(player_trainer, enemy_trainer, run_identifier, save_movie=Fal
 	os.rmdir(working_dir)
 
 	return battle_log
+	"""
+
+
+def get_pyboy_instance(headless=True):
+	if headless:
+		emulator = PyBoy(
+			files.ROM_IMAGE,
+			window_type="headless",
+			randomize=False,
+		)
+	else:
+		emulator = PyBoy(
+			files.ROM_IMAGE,
+			randomize=False,
+			sound=True,
+		)
+
+	emulator.set_emulation_speed(0)
+
+	return emulator
 
 
 def run_random_battle(seed=None, save_movie=False):
@@ -476,9 +502,9 @@ if __name__ == '__main__':
 	#baton pass battles
 	# run_battle_from_hashid("en153y37", save_movie=True)
 	# run_battle_with_trainers(get_player_by_class_id(34, 2), get_player_by_class_id(59, 8), random.Random("baton-pass-battles"), save_movie=True)
-	# run_random_battle(save_movie=False)
+	run_random_battle(save_movie=False)
 
-	run_battle_from_hashid("7!3y3dow", save_movie=True)
+	# run_battle_from_hashid("7!3y3dow", save_movie=False)
 
 # run_random_battle(save_movie=False)
 # test_battles_with_all_trainers()

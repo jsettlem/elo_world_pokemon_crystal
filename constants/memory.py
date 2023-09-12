@@ -1,4 +1,48 @@
+import os
+import re
 from dataclasses import dataclass
+from typing import Dict, Tuple
+
+
+def load_sym_file(filename):
+	rom_symbols = {}
+	reverse_rom_symbols = {}
+	if os.path.isfile(filename):
+		with open(filename) as f:
+			for _line in f.readlines():
+				line = _line.strip()
+				if line == "":
+					continue
+				elif line.startswith(";"):
+					continue
+				elif line.startswith("["):
+					# Start of key group
+					# [labels]
+					# [definitions]
+					continue
+
+				try:
+					bank, addr, sym_label = re.split(":| ", line.strip())
+					bank = int(bank, 16)
+					addr = int(addr, 16)
+					if not bank in rom_symbols:
+						rom_symbols[bank] = {}
+
+					rom_symbols[bank][addr] = sym_label
+					reverse_rom_symbols[sym_label] = (bank, addr)
+				except ValueError as ex:
+					print(f"Skipping .sym line: {line.strip()}")
+	return rom_symbols, reverse_rom_symbols
+
+def reverse_symbol_map(symbols) -> Dict[str, Tuple[int, int]]:
+	reverse_symbols = {}
+	for bank in symbols:
+		for addr in symbols[bank]:
+			sym_label = symbols[bank][addr]
+			reverse_symbols[sym_label] = (bank, addr)
+	return reverse_symbols
+
+symbols, reverse_symbols = load_sym_file("./static_files/pokecrystal11.sym")
 
 WRAM_OFFSET = 0xC000
 
@@ -15,115 +59,123 @@ class MemoryAddress:
 	offset: int
 	size: int
 
+	def __init__(self, offset: str | int, size: int):
+		if isinstance(offset, str):
+			self.offset = reverse_symbols[offset][1]
+		else:
+			self.offset = offset
+		self.size = size
 
-wOtherTrainerClass = MemoryAddress(0xd22f, 1)
-wTrainerClass = MemoryAddress(0xd233, 1)
-wOtherTrainerID = MemoryAddress(0xd231, 1)
 
-wStringBuffer1 = MemoryAddress(0xd073, PLAYER_NAME_LENGTH)
 
-wPlayerName = MemoryAddress(0xd47d, PLAYER_NAME_LENGTH)
+wOtherTrainerClass = MemoryAddress("wOtherTrainerClass", 1)
+wTrainerClass = MemoryAddress("wTrainerClass", 1)
+wOtherTrainerID = MemoryAddress("wOtherTrainerID", 1)
+
+wStringBuffer1 = MemoryAddress("wStringBuffer1", PLAYER_NAME_LENGTH)
+
+wPlayerName = MemoryAddress("wPlayerName", PLAYER_NAME_LENGTH)
 playerNameEnd = MemoryAddress(0xd48d + PLAYER_NAME_LENGTH - 1, 1)
 
-wPlayerGender = MemoryAddress(0xd472, 1)
-wTextboxFrame = MemoryAddress(0xcfce, 1)
+wPlayerGender = MemoryAddress("wPlayerGender", 1)
+wTextboxFrame = MemoryAddress("wTextboxFrame", 1)
 
-wOTParty = MemoryAddress(0xd280, 0x1ac)
-wOTPartyCount = MemoryAddress(0xd280, 1)
+wOTParty = MemoryAddress("wOTPartyCount", 0x1ac)
+wOTPartyCount = MemoryAddress("wOTPartyCount", 1)
 
 enemyParty = [
-	MemoryAddress(0xd288 + i * PARTY_STRUCT_SIZE, PARTY_STRUCT_SIZE) for i in range(6)
+	MemoryAddress(reverse_symbols["wOTPartyMons"][1] + i * PARTY_STRUCT_SIZE, PARTY_STRUCT_SIZE) for i in range(6)
 ]
 
-wPlayerParty = MemoryAddress(0xdcd7, 0x1ac)
-wPlayerPartyCount = MemoryAddress(0xdcd7, 1)
+wPlayerParty = MemoryAddress("wPokemonData", 0x1ac)
+wPlayerPartyCount = MemoryAddress("wPartyCount", 1)
 
 playerParty = [
-	MemoryAddress(0xdcdf + i * PARTY_STRUCT_SIZE, PARTY_STRUCT_SIZE) for i in range(6)
+	MemoryAddress(reverse_symbols["wPartyMons"][1] + i * PARTY_STRUCT_SIZE, PARTY_STRUCT_SIZE) for i in range(6)
 ]
 
 playerPartyNicks = [
-	MemoryAddress(0xde41 + i * NAME_LENGTH, NAME_LENGTH) for i in range(6)
+	MemoryAddress(reverse_symbols["wPartyMonNicknames"][1] + i * NAME_LENGTH, NAME_LENGTH) for i in range(6)
 ]
 playerPartyOTs = [
-	MemoryAddress(0xddff + i * NAME_LENGTH, PLAYER_NAME_LENGTH) for i in range(6)
+	MemoryAddress(reverse_symbols["wPartyMonOTs"][1] + i * NAME_LENGTH, PLAYER_NAME_LENGTH) for i in range(6)
 ]
 
-wBattleMonNickname = MemoryAddress(0xc621, NAME_LENGTH)
-wEnemyMonNickname = MemoryAddress(0xc616, NAME_LENGTH)
-wBattleMon = MemoryAddress(0xc62c, BATTLE_MON_SIZE)
-wEnemyMon = MemoryAddress(0xd206, BATTLE_MON_SIZE)
-wEnemyMoveStruct = MemoryAddress(0xc608, 7)
-wPlayerMoveStruct = MemoryAddress(0xc60f, 7)
-wPlayerSubStatus1 = MemoryAddress(0xc668, 1)
-wEnemySubStatus1 = MemoryAddress(0xc66d, 1)
-wPlayerSubStatus2 = MemoryAddress(0xc669, 1)
-wEnemySubStatus2 = MemoryAddress(0xc66e, 1)
-wPlayerSubStatus3 = MemoryAddress(0xc66a, 1)
-wEnemySubStatus3 = MemoryAddress(0xc66f, 1)
-wPlayerSubStatus4 = MemoryAddress(0xc66b, 1)
-wEnemySubStatus4 = MemoryAddress(0xc670, 1)
-wPlayerSubStatus5 = MemoryAddress(0xc66c, 1)
-wEnemySubStatus5 = MemoryAddress(0xc671, 1)
-wCurPlayerMove = MemoryAddress(0xc6e3, 1)
-wCurEnemyMove = MemoryAddress(0xc6e4, 1)
-wLastPlayerCounterMove = MemoryAddress(0xc6f8, 1)
-wLastEnemyCounterMove = MemoryAddress(0xc6f9, 1)
-wLastPlayerMove = MemoryAddress(0xc71b, 1)
-wLastEnemyMove = MemoryAddress(0xc71c, 1)
-wPlayerRolloutCount = MemoryAddress(0xc672, 1)
-wEnemyRolloutCount = MemoryAddress(0xc67a, 1)
-wPlayerConfuseCount = MemoryAddress(0xc673, 1)
-wEnemyConfuseCount = MemoryAddress(0xc67b, 1)
-wPlayerToxicCount = MemoryAddress(0xc674, 1)
-wEnemyToxicCount = MemoryAddress(0xc67c, 1)
-wPlayerDisableCount = MemoryAddress(0xc675, 1)
-wEnemyDisableCount = MemoryAddress(0xc67d, 1)
-wPlayerEncoreCount = MemoryAddress(0xc676, 1)
-wEnemyEncoreCount = MemoryAddress(0xc67e, 1)
-wPlayerPerishCount = MemoryAddress(0xc677, 1)
-wEnemyPerishCount = MemoryAddress(0xc67f, 1)
-wPlayerFuryCutterCount = MemoryAddress(0xc678, 1)
-wEnemyFuryCutterCount = MemoryAddress(0xc680, 1)
-wPlayerProtectCount = MemoryAddress(0xc679, 1)
-wEnemyProtectCount = MemoryAddress(0xc681, 1)
-wPlayerScreens = MemoryAddress(0xc6ff, 1)
-wEnemyScreens = MemoryAddress(0xc700, 1)
-wPlayerDamageTaken = MemoryAddress(0xc682, 2)
-wEnemyDamageTaken = MemoryAddress(0xc684, 2)
-wPlayerStats = MemoryAddress(0xc6b6, 10)
-wEnemyStats = MemoryAddress(0xc6c1, 10)
-wPlayerStatLevels = MemoryAddress(0xc6cc, 7)
-wEnemyStatLevels = MemoryAddress(0xc6d4, 7)
-wPlayerTurnsTaken = MemoryAddress(0xc6dd, 1)
-wEnemyTurnsTaken = MemoryAddress(0xc6dc, 1)
-wPlayerSubstituteHP = MemoryAddress(0xc6df, 1)
-wEnemySubstituteHP = MemoryAddress(0xc6e0, 1)
-wDisabledMove = MemoryAddress(0xc6f5, 1)
-wEnemyDisabledMove = MemoryAddress(0xc6f6, 1)
-wCurPartyMon = MemoryAddress(0xd109, 1)
-wCurBattleMon = MemoryAddress(0xd0d4, 1)
-wCurOTMon = MemoryAddress(0xc663, 1)
+wBattleMonNickname = MemoryAddress("wBattleMonNickname", NAME_LENGTH)
+wEnemyMonNickname = MemoryAddress("wEnemyMonNickname", NAME_LENGTH)
+wBattleMon = MemoryAddress("wBattleMon", BATTLE_MON_SIZE)
+wEnemyMon = MemoryAddress("wEnemyMon", BATTLE_MON_SIZE)
+wEnemyMoveStruct = MemoryAddress("wEnemyMoveStruct", 7)
+wPlayerMoveStruct = MemoryAddress("wPlayerMoveStruct", 7)
+wPlayerSubStatus1 = MemoryAddress("wPlayerSubStatus1", 1)
+wEnemySubStatus1 = MemoryAddress("wEnemySubStatus1", 1)
+wPlayerSubStatus2 = MemoryAddress("wPlayerSubStatus2", 1)
+wEnemySubStatus2 = MemoryAddress("wEnemySubStatus2", 1)
+wPlayerSubStatus3 = MemoryAddress("wPlayerSubStatus3", 1)
+wEnemySubStatus3 = MemoryAddress("wEnemySubStatus3", 1)
+wPlayerSubStatus4 = MemoryAddress("wPlayerSubStatus4", 1)
+wEnemySubStatus4 = MemoryAddress("wEnemySubStatus4", 1)
+wPlayerSubStatus5 = MemoryAddress("wPlayerSubStatus5", 1)
+wEnemySubStatus5 = MemoryAddress("wEnemySubStatus5", 1)
+wCurPlayerMove = MemoryAddress("wCurPlayerMove", 1)
+wCurEnemyMove = MemoryAddress("wCurEnemyMove", 1)
+wLastPlayerCounterMove = MemoryAddress("wLastPlayerCounterMove", 1)
+wLastEnemyCounterMove = MemoryAddress("wLastEnemyCounterMove", 1)
+wLastPlayerMove = MemoryAddress("wLastPlayerMove", 1)
+wLastEnemyMove = MemoryAddress("wLastEnemyMove", 1)
+wPlayerRolloutCount = MemoryAddress("wPlayerRolloutCount", 1)
+wEnemyRolloutCount = MemoryAddress("wEnemyRolloutCount", 1)
+wPlayerConfuseCount = MemoryAddress("wPlayerConfuseCount", 1)
+wEnemyConfuseCount = MemoryAddress("wEnemyConfuseCount", 1)
+wPlayerToxicCount = MemoryAddress("wPlayerToxicCount", 1)
+wEnemyToxicCount = MemoryAddress("wEnemyToxicCount", 1)
+wPlayerDisableCount = MemoryAddress("wPlayerDisableCount", 1)
+wEnemyDisableCount = MemoryAddress("wEnemyDisableCount", 1)
+wPlayerEncoreCount = MemoryAddress("wPlayerEncoreCount", 1)
+wEnemyEncoreCount = MemoryAddress("wEnemyEncoreCount", 1)
+wPlayerPerishCount = MemoryAddress("wPlayerPerishCount", 1)
+wEnemyPerishCount = MemoryAddress("wEnemyPerishCount", 1)
+wPlayerFuryCutterCount = MemoryAddress("wPlayerFuryCutterCount", 1)
+wEnemyFuryCutterCount = MemoryAddress("wEnemyFuryCutterCount", 1)
+wPlayerProtectCount = MemoryAddress("wPlayerProtectCount", 1)
+wEnemyProtectCount = MemoryAddress("wEnemyProtectCount", 1)
+wPlayerScreens = MemoryAddress("wPlayerScreens", 1)
+wEnemyScreens = MemoryAddress("wEnemyScreens", 1)
+wPlayerDamageTaken = MemoryAddress("wPlayerDamageTaken", 2)
+wEnemyDamageTaken = MemoryAddress("wEnemyDamageTaken", 2)
+wPlayerStats = MemoryAddress("wPlayerStats", 10)
+wEnemyStats = MemoryAddress("wEnemyStats", 10)
+wPlayerStatLevels = MemoryAddress("wPlayerStatLevels", 7)
+wEnemyStatLevels = MemoryAddress("wEnemyStatLevels", 7)
+wPlayerTurnsTaken = MemoryAddress("wPlayerTurnsTaken", 1)
+wEnemyTurnsTaken = MemoryAddress("wEnemyTurnsTaken", 1)
+wPlayerSubstituteHP = MemoryAddress("wPlayerSubstituteHP", 1)
+wEnemySubstituteHP = MemoryAddress("wEnemySubstituteHP", 1)
+wDisabledMove = MemoryAddress("wDisabledMove", 1)
+wEnemyDisabledMove = MemoryAddress("wEnemyDisabledMove", 1)
+wCurPartyMon = MemoryAddress("wCurPartyMon", 1)
+wCurBattleMon = MemoryAddress("wCurBattleMon", 1)
+wCurOTMon = MemoryAddress("wCurOTMon", 1)
 
-wPlayerTrappingMove = MemoryAddress(0xc72e, 1)
-wEnemyTrappingMove = MemoryAddress(0xc72f , 1)
-wPlayerWrapCount = MemoryAddress(0xc730, 1)
-wEnemyWrapCount = MemoryAddress(0xc731, 1)
-wPlayerCharging = MemoryAddress(0xc732, 1)
-wEnemyCharging = MemoryAddress(0xc733, 1)
-wPlayerRageCounter = MemoryAddress(0xc72b, 1)
-wEnemyRageCounter = MemoryAddress(0xc72c, 1)
-wPlayerMinimized = MemoryAddress(0xc6fe, 1)
-wEnemyMinimized = MemoryAddress(0xc6fa, 1)
+wPlayerTrappingMove = MemoryAddress("wPlayerTrappingMove", 1)
+wEnemyTrappingMove = MemoryAddress("wEnemyTrappingMove" , 1)
+wPlayerWrapCount = MemoryAddress("wPlayerWrapCount", 1)
+wEnemyWrapCount = MemoryAddress("wEnemyWrapCount", 1)
+wPlayerCharging = MemoryAddress("wPlayerCharging", 1)
+wEnemyCharging = MemoryAddress("wEnemyCharging", 1)
+wPlayerRageCounter = MemoryAddress("wPlayerRageCounter", 1)
+wEnemyRageCounter = MemoryAddress("wEnemyRageCounter", 1)
+wPlayerMinimized = MemoryAddress("wPlayerMinimized", 1)
+wEnemyMinimized = MemoryAddress("wEnemyMinimized", 1)
 
-wEnemyItemState = MemoryAddress(0xc6e6, 1)
-wCurEnemyMoveNum = MemoryAddress(0xc6e9, 1)
-wAlreadyFailed = MemoryAddress(0xc6fb, 1)
-wCurMoveNum = MemoryAddress(0xd0d5, 1)
-wPartyMenuCursor = MemoryAddress(0xd0d8, 1)
-wEnemySwitchMonIndex = MemoryAddress(0xc718, 1)
+wEnemyItemState = MemoryAddress("wEnemyItemState", 1)
+wCurEnemyMoveNum = MemoryAddress("wCurEnemyMoveNum", 1)
+wAlreadyFailed = MemoryAddress("wAlreadyFailed", 1)
+wCurMoveNum = MemoryAddress("wCurMoveNum", 1)
+wPartyMenuCursor = MemoryAddress("wPartyMenuCursor", 1)
+wEnemySwitchMonIndex = MemoryAddress("wEnemySwitchMonIndex", 1)
 
-wBattleWeather = MemoryAddress(0xc70a, 1)
+wBattleWeather = MemoryAddress("wBattleWeather", 1)
 
 breakpoints = {
 	"SetUpBattlePartyMenu": 0x52f7,
@@ -214,22 +266,22 @@ player_enemy_pairs = (
 )
 
 
-wPlayerUsedMoves = MemoryAddress(0xc712, 4)
-wEnemyMonMoves = MemoryAddress(0xd208, 4)
-wEnemyMonPP = MemoryAddress(0xd20e, 4)
+wPlayerUsedMoves = MemoryAddress("wPlayerUsedMoves", 4)
+wEnemyMonMoves = MemoryAddress("wEnemyMonMoves", 4)
+wEnemyMonPP = MemoryAddress("wEnemyMonPP", 4)
 
-wBattleMonMoves = MemoryAddress(0xc62e, 4)
+wBattleMonMoves = MemoryAddress("wBattleMonMoves", 4)
 
-wNumItems = MemoryAddress(0xd892, 1)
-wItems = MemoryAddress(0xd893, 3)
-wEnemyTrainerItems = MemoryAddress(0xc650, 2)
+wNumItems = MemoryAddress("wNumItems", 1)
+wItems = MemoryAddress("wItems", 3)
+wEnemyTrainerItems = MemoryAddress("wEnemyTrainerItem1", 2)
 
-wBattleMonSpecies = MemoryAddress(0xc62c, 1)
-wBattleMonHP = MemoryAddress(0xc63c, 2)
-wBattleMonMaxHP = MemoryAddress(0xc63e, 2)
+wBattleMonSpecies = MemoryAddress("wBattleMonSpecies", 1)
+wBattleMonHP = MemoryAddress("wBattleMonHP", 2)
+wBattleMonMaxHP = MemoryAddress("wBattleMonMaxHP", 2)
 
-wEnemyMonSpecies = MemoryAddress(0xd206, 1)
-wEnemyMonHP = MemoryAddress(0xd216, 2)
-wEnemyMonMaxHP = MemoryAddress(0xd218, 2)
+wEnemyMonSpecies = MemoryAddress("wEnemyMonSpecies", 1)
+wEnemyMonHP = MemoryAddress("wEnemyMonHP", 2)
+wEnemyMonMaxHP = MemoryAddress("wEnemyMonMaxHP", 2)
 
-wEnemyTrainerBaseReward = MemoryAddress(0xc652, 1)
+wEnemyTrainerBaseReward = MemoryAddress("wEnemyTrainerBaseReward", 1)

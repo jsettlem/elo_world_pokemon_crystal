@@ -4,3 +4,4 @@ hashids~=1.0.2
 flask[command]~=2.1.2
 requests[command]~=2.27.1
 joblib[command]~=1.1.0
+pyboy
